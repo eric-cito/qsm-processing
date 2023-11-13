@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Melanie Morrison, 2021
+# processes QSM using ilsqr method
+
+# Usage: make_qsm_ilsqr PD0ID
+# Usage: when matlab opens right click "paste"
+
+# run on dublin 
+
+
+ptid=$1
+pwd=$(pwd)
+
+echo -e '\n\n...Processing QSM: ILSQR Method...\n\n'
+
+echo "make_swan_qsm_26x('$ptid','ilsqr', 'swan_raw', 4, [6,9.5,13,16.5], 7)" | xclip -selection clipboard
+
+/netopt/rhel7/bin/matlab_2015b -nojvm
+
+exit
+
+echo -e '\n\n...done...\n\n'
+
+
+
+

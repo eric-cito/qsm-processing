@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Melanie Morrison, 2021
+# processes QSM using the Deep CNN Network
+
+# Usage: make_qsm_deep PD0ID
+# Usage: when bash script opens right click "paste"
+
+# Run in highfield or machine with nvidia driver
+
+# set up your bashrc file in your home directory with the following lines if running frequently:
+# source /working/lupolab/eason/anaconda3/envs/dl/bin/activate /working/lupolab/eason/anaconda3/envs/dl
+# cd /working/lupolab/eason/DL_QSM/code_pytorch_v3
+
+
+ptid=$1
+pwd=$(pwd)
+
+echo -e '\n\n...Processing QSM: Deep Method...\n\n'
+
+echo "python make_swan_qsm_DL.py $pwd/ilsqr/$1_tissue_phase.idf" | xclip -selection clipboard
+
+bash
+
+exit 
+
+echo -e '\n\n...done...\n\n'
+
+
+
+
+
