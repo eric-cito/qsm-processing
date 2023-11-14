@@ -5,45 +5,9 @@ import subprocess
 import dcm2niix
 from OSUtils import ListDirWithFullPaths
 import SimpleITK as sitk
-# QSM_processing 
-# Written by Jingwen
-# Modified by Melanie
-
-# %% add path
-
-# warning('off');
-# addpath(genpath('/home/lreid/qsm/qsm/jingwen_code'));
-# addpath('/data/morrison/scripts/matlab_snippets/nifti_tools');
-# addpath('/home/lreid/qsm');
-
-# %% set up data paths
+from .FileLocations import FileLocations
 
 
-class FileLocations:
-
-    def __init__(self, dir_top):
-        self.dir_top =  dir_top
-        self.dir_dicoms_in = os.path.join(dir_top, 'qsm_dicoms/brain_ax_3d_swi_v1/')
-
-        self.dir_out_top =os.path.join(dir_top, 'processed_QSM/')
-        self.dir_raw_nii = os.path.join(self.dir_out_top, 'raw/')
-        
-        
-        self.dir_phase_mag = os.path.join(self.dir_out_top, 'phase_mag/')
-
-        self.loc_phase = os.path.join(self.dir_phase_mag, 'Phase.nii.gz')
-        self.loc_magnitude = os.path.join(self.dir_phase_mag, 'Magni.nii.gz')
-
-
-    def GetLoc(self, dir:str, echoNumber:Union[str,int], type:str, suffix:str="nii"):
-        
-        if int(echoNumber) < 10:
-            echoNumber = "0" + str(echoNumber)
-        else:
-            echoNumber = str(echoNumber)
-
-        loc = dir + "echo" + echoNumber + "_" +type+ "."+ suffix
-        return loc
 
 
 class QSMPipeline:
@@ -53,6 +17,12 @@ class QSMPipeline:
 
     def Run(self):
         os.makedirs(self.locs.dir_out_top, exist_ok=True)
+
+        self.GetOrCreatePhaseImages()
+
+        self.SkullStrip()
+        
+    def GetOrCreatePhaseImages(self):
         [locs_mag, locs_imag, locs_real] = self.ConvertDicoms()
 
         noEchoes = len(locs_mag)
@@ -60,8 +30,8 @@ class QSMPipeline:
         phaseImages = list()
 
         for iEcho in range(0,noEchoes):
-            phaseImages.append(self.CreatePhaseForEcho(locs_imag[iEcho], locs_real[iEcho]))
-        
+            phaseImages.append(self.GetOrCreatePhaseForEcho(locs_imag[iEcho], locs_real[iEcho]))
+
 
     def ConvertDicoms(self) -> Tuple[str]:
 
@@ -118,7 +88,7 @@ class QSMPipeline:
         return int(fn[4:].split("_")[0])
 
 
-    def CreatePhaseForEcho(self, loc_imaginary, loc_real):
+    def GetOrCreatePhaseForEcho(self, loc_imaginary, loc_real):
         '''
         Gets the phase image if existing, else creates it
         '''
