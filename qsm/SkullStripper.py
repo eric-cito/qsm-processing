@@ -1,9 +1,11 @@
-from . import RunHDBet
+from typing import List
 from .ImageGetter import ImageGetter
 from .IO import WriteImageIfPathProvided
 import SimpleITK as sitk
 import os
 import tempfile
+import HDBET.HD_BET.run
+
 
 
 class SkullStripper:
@@ -11,7 +13,7 @@ class SkullStripper:
         self.mrGetter = ImageGetter(mrImgOrLocation)
 
 
-    def CalcBrainmask(self, loc_saveTo=None)  -> sitk.Image:
+    def GetOrCalcBrainmask(self, loc_saveTo=None)  -> sitk.Image:
         '''
         Returns a mask of the brain
         '''
@@ -23,11 +25,11 @@ class SkullStripper:
         loc_in = self.mrGetter.location
         writeAndDelete = loc_in is None
         if writeAndDelete:
-            loc_in = tempfile.mktemp(suffix="nii")
+            loc_in = tempfile.mktemp(suffix=".nii")
             sitk.WriteImage(self.mrGetter.GetImage(), loc_in)
 
         
-        mask = RunHDBet.RunHDBet_CPU(loc_in)
+        mask = self.RunHDBet_CPU(loc_in)
         
         WriteImageIfPathProvided(mask, loc_saveTo)
 
@@ -36,3 +38,22 @@ class SkullStripper:
             os.remove(loc_in)
 
         return mask
+    
+    def RunHDBet_CPU(self, input_files:[str, List[str]], mode:str = 'fast', tta=False):
+        '''Helper method to call HD bet using the CPU. Returns the mask'''
+
+        if mode != "fast" and mode != "accurate":
+            raise Exception("Bad mode " + mode)
+        
+        loc_out = tempfile.mktemp(suffix="nii.gz")
+
+        return HDBET.HD_BET.run.run_hd_bet(input_files, 
+                                        loc_out, 
+                                        mode, 
+                                        config_file=None, 
+                                        device='cpu', 
+                                        postprocess=True, 
+                                        do_tta=tta, 
+                                        keep_mask=False, 
+                                        overwrite=True, 
+                                        bet=False)[0]

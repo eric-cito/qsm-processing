@@ -1,5 +1,6 @@
-from typing import AnyStr, Optional
+from typing import AnyStr, Optional, List
 import SimpleITK as sitk
+import os
 
 
 def WriteImageIfPathProvided(img:sitk.Image, path:Optional[AnyStr]) -> bool:
@@ -12,3 +13,4 @@ def WriteImageIfPathProvided(img:sitk.Image, path:Optional[AnyStr]) -> bool:
         sitk.WriteImage(img, path, useCompression=path.endswith(".gz"), imageIO="NiftiImageIO")
     return write
         
+

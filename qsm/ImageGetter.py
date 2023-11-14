@@ -24,7 +24,8 @@ class ImageGetter:
         return self.cached
 
     def CacheImage(self):
-        self.cached = sitk.ReadImage(self.location, imageIO="NiftiImageIO")
+        if self.cached is None:
+            self.cached = sitk.ReadImage(self.location, imageIO="NiftiImageIO")
 
 
 def GetImage(locationOrImage):
