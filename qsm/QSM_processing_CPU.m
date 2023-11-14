@@ -140,13 +140,13 @@ end
 % system(['cp ' input.phaseFile ' ' output_data_path '/Phase.nii.gz']);
 
 
-nii = load_untouch_nii([output_data_path '/Magni.nii.gz']);
+nii = load_untouch_nii([output_data_path 'Magni.nii.gz']);
 iMag = double(nii.img);
 matrix_size = nii.hdr.dime.dim(2:4);
 Necho = nii.hdr.dime.dim(5);
 voxel_size = nii.hdr.dime.pixdim(2:4); % mm
 
-nii = load_untouch_nii([output_data_path '/Phase.nii.gz']);
+nii = load_untouch_nii([output_data_path 'Phase.nii.gz']);
 iPha = double(nii.img);
 
 % rescale phase to -pi to pi
@@ -159,9 +159,9 @@ deltaTE = header.delta_TE;
 
 % split to subvolumes
 cd(output_data_path);
-if exist([output_data_path '/Magni_subvol/Magni0000.nii.gz'],'file') ~= 2
+if exist([output_data_path 'Magni_subvol/Magni0000.nii.gz'],'file') ~= 2
     system('fslsplit Magni.nii.gz Magni -t');
-    mkdir([output_data_path '/Magni_subvol']);
+    mkdir([output_data_path 'Magni_subvol']);
     system('mv Magni0*.nii.gz Magni_subvol');
 end
 
