@@ -1,7 +1,7 @@
 import os
 import subprocess
 import SimpleITK as sitk
-from SimpleItk import Image
+from SimpleITK import Image
 from typing import List
 import tempfile
 
