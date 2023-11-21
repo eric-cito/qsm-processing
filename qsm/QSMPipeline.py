@@ -5,9 +5,64 @@ import subprocess
 import dcm2niix
 import SimpleITK as sitk
 import json
+import numpy
 from .OSUtils import ListDirWithFullPaths, DeleteAllIfFound, GetWithDifferentSuffix
 from .FileLocations import FileLocations
 from .SkullStripper import SkullStripper
+from PythonUtils import AssertImage
+from .Romeo import RunRomeo_sitk
+
+class UnwrapPhasePipeline:
+
+    def __init__(self, phase:sitk.Image, mag:sitk.Image, brainmask:sitk.Image, TEs:List[float], locs:FileLocations):
+        self.phase = phase
+        self.magnitude = mag
+        self.brainmask = brainmask
+        self.TEs = TEs
+        self.locs = locs
+        AssertImage.AssertAreSameSize(self.phase, self.magnitude)
+        AssertImage.AssertAreSameSize(self.phase, self.brainmask)
+
+
+    def Run(self) -> sitk.Image:
+        if os.path.exists(self.locs.phase_unwrapped):
+            print("Unwrapped phase found. Generation skipped")
+            return sitk.ReadImage(self.locs.phase_unwrapped)
+
+        #self.EnsureOddSliceCount()
+
+        unwrapped =  self.UnwrapPhase()
+
+        return unwrapped
+
+        
+    def EnsureOddSliceCount(self):
+        if self.phase.GetSize()[2] % 2 == 0:
+            # Even number of slices
+            self.phase = sitk.ConstantPad(self.phase, sitk.VectorInt32(0,0,1))
+            self.magnitude = sitk.ConstantPad(self.magnitude, sitk.VectorInt32(0,0,1))
+            self.brainmask = sitk.ConstantPad(self.brainmask, sitk.VectorInt32(0,0,1))
+         
+    
+    def UnwrapPhase(self):
+        if os.path.exists(self.locs.phase_unwrapped):
+            print(self.locs.phase_unwrapped, "found. Unwrapping not re-performed")
+            return sitk.ReadImage(self.locs.phase_unwrapped)
+        else:
+            return RunRomeo_sitk(self.phase, self.magnitude, self.TEs, self.locs.phase_unwrapped)
+
+
+class BackgroundFieldRemovalAndDipoleInversionPipeline():
+
+    def __init__(self, unwrappedPhase:sitk.Image, brainmask:sitk.Image, locs:FileLocations):
+        self.phase = unwrappedPhase
+        self.brainmask = brainmask
+        self.locs = locs
+
+
+    def Run(self) -> sitk.Image:
+        raise Exception("Not implemented")
+
 
 class QSMPipeline:
 
@@ -21,6 +76,10 @@ class QSMPipeline:
 
         print("Skull stripping")
         brainMask = self.GetOrCalcBrainmask(mag)
+
+        unwrapped = UnwrapPhasePipeline(phase, mag, brainMask).Run()
+
+        BackgroundFieldRemovalAndDipoleInversionPipeline(unwrapped, brainmask, self.locs).Run()
 
 
     def GetOrCalcBrainmask(self, mag):
@@ -118,9 +177,6 @@ class DicomToPhasePipeline:
     def CalcPhaseImages(self, locs_imag, locs_real):
         '''
         Calculates phase from imaginary and real.
-        NB ITK can cause weirdness where the phase leaves the bounds 
-        of -Pi to Pi due to rounding error, or something. This looks
-        like striping 
         '''
         phaseImages = list()
         for iEcho in range(0,len(locs_imag)):
@@ -205,11 +261,17 @@ class DicomToPhasePipeline:
 
             asComplex = sitk.RealAndImaginaryToComplex(real,imaginary)
 
-            # Negate every odd slice
+            # Negate every odd slice due to some bug in GE's implementation
             for sliceNo in range(1, asComplex.GetSize()[-1], 2):
                 asComplex[:,:,sliceNo] *= -1.0
 
             phase = sitk.ComplexToPhase(asComplex)
+
+            # NB ITK can cause weirdness where the phase leaves the bounds 
+            # of -Pi to Pi due to rounding error, or something. This looks
+            # like striping 
+            phase = sitk.Modulus(phase, 3.14159265358979323846)
+
             sitk.WriteImage(phase, locTo)
             return phase
 

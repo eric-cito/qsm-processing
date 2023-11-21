@@ -20,9 +20,19 @@ source env/bin/activate
 #python3 -m pip install --upgrade pip
 python3.9 -m pip install -r requirements.txt
 
+echo 'Installing PythonUtils'
+if [ ! -d "PythonUtils" ]; then
+    git clone git@git.ucsf.edu:lee-reid/PythonUtils.git
+fi
+
+PythonUtils/build.sh
+
+# # HD-BET
+# git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
+# bash HDBET/build.sh
 # HD-BET
-git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
-cd HDBET
-echo "folder_with_parameter_files = os.path.join('`pwd`', 'hd-bet_params') # Override by Lee" >> HD_BET/paths.py
-python3.9 -m pip install -e .
-cd ..
+if [ ! -d "HDBET" ]; then
+    git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
+fi
+
+HDBET/build.sh

@@ -17,6 +17,7 @@ class FileLocations:
         self.loc_magnitude = os.path.join(self.dir_phase_mag, 'magnitude.nii.gz')
         self.loc_TEs = os.path.join(self.dir_phase_mag, 'echo_times.txt')
         self.loc_brainmask = os.path.join(self.dir_out_top, "brainmask.nii.gz")
+        self.phase_unwrapped = os.path.join(self.dir_phase_mag, 'phase_unwrapped.nii.gz')
 
 
     def GetLoc(self, dir:str, echoNumber:Union[str,int], type:str, suffix:str="nii"):
