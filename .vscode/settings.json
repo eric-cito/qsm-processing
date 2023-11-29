@@ -1,5 +1,6 @@
 {
     "files.watcherExclude": {
-        "/env/**": true
+        "/env/**": true,
+        "/conda-env/**": true
     }
 }

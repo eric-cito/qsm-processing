@@ -4,6 +4,7 @@ import json
 import time
 import os
 import warnings
+import math
 from typing import List, Tuple
 
 class DicomGenerator:
@@ -20,6 +21,8 @@ class DicomGenerator:
         self.source = image
         self.dir_out = dir_out
         self.loc_dicomJSON = loc_dicomJSON
+        self.intensityScaleFactor = 1
+        self.intensityOffset = 0
 
     def Run(self):
         
@@ -84,6 +87,9 @@ class DicomGenerator:
 
         tags.append(("0008|103e", inputProperties["SeriesDescription"] + " Processed"))  # Series Description
         tags.append(("0008|0008","DERIVED\\SECONDARY")), # Image Type
+        tags.append(("0028|1052","0")), # Rescale offset
+        tags.append(("0028|1053",str(self.intensityScaleFactor))), # Rescale slope
+
 
 
         tags = tags + self.GetPixelTypeTag()
@@ -125,4 +131,56 @@ class DicomGenerator:
         with open(self.loc_dicomJSON) as f:
             data = json.load(f)
         return data
+    
+
+    def CastImageToInt16(self):
+        if self.source.GetPixelID() == sitk.sitkInt16 or self.source.GetPixelID() == sitk.sitkInt8:
+            return
+        
+        # To minimise data loss with int16, we scale the floating point image
+        # then keep the scaling information in the dicom header to get back to 
+        # almost the exact same values as we started with
+
+        # https://www.kitware.com/dicom-rescale-intercept-rescale-slope-and-itk/ 
+        # Original = scalingFactor * integerIntensity + offset
+        # so
+        # (original - offset) / scalingFactor = integerIntensity
+        
+        # We want the image minimum to be -32768 (int16 min) and max to be 32767 (int16 max)
+        
+        # let range = max - min
+        # For value x, find its proportion of the max value
+        # (x - min) / range
+        # then convert to the range -32768 to 32767
+        # ((x - min) / range) * (32767 - -32768) + -32768
+        # e.g. image max 10, min -3
+        # scaled = ((x - min) / range) * (32767 - -32768) + -32768
+        # scaled = ((10 - -3) / (10--3)) * (32767 - -32768) + -32768 = 32767
+
+        # Then to reconstitute
+        # scale factor =  (max - min) / (32767 - -32768) = 1/5041
+        # offset = -32768 + -3 = -32765
+        # so 10 => 32767 => (32767 - -32765) * 1/5041
+
+        
+        min,max = sitk.MinimumMaximum(self.source)
+        
+        # Scaling to [int16min int16max]
+        # scale by: (int16max - int16min)/(max - min)
+        # offset by: int16min - min * (int16max - int16min)/(max - min)
+        # But store the reverse of this in the dicom header:
+        # scale by: (max - min)/(int16max - int16min)
+        # offset by: min - int16min * (max - min)/(int16max - int16min)
+
+
+        int16max=32767
+        int16min=-32768
+        self.intensityScaleFactor = (max - min)/(int16max - int16min)
+        self.intensityOffset = min - int16min * (max - min)/(int16max - int16min)
+
+        toIntScale=(int16max - int16min)/(max - min)
+        toIntOffset=int16min - min * (int16max - int16min)/(max - min)
+
+        self.source = sitk.Cast(sitk.Round(self.source * toIntScale + toIntOffset), sitk.sitkInt16)
+
     

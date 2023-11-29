@@ -35,10 +35,11 @@ class QSMPipeline:
         brainMask = self.GetOrCalcBrainmask(mag)
         unwrapped = UnwrapPhasePipeline(phase, mag, brainMask).Run()
 
-        BackgroundFieldRemovalAndDipoleInversionPipeline(unwrapped, brainMask, self.locs).Run()
+        dipoleInverted = BackgroundFieldRemovalAndDipoleInversionPipeline(unwrapped, brainMask, self.locs).Run()
 
-THIS CODE SHOULD WRITE THE OUTPUT OF THE PIPELINE ABOVE, NOT THE PHASE IMAGE
-        DicomGenerator(sitk.Cast(phase[:,:,:,0]*1000, sitk.sitkInt16), self.locs.dir_dicoms_out, self.locs.loc_dicomHeader).Run()
+        final = dipoleInverted
+
+        DicomGenerator(sitk.Cast(final * 1000, sitk.sitkInt16), self.locs.dir_dicoms_out, self.locs.loc_dicomHeader).Run()
 
     def GetOrCalcBrainmask(self, mag):
         # The last echo has the least skull visible

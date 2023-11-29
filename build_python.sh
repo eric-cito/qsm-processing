@@ -8,6 +8,10 @@
 #   conda activate # If needed for python 3.9
 
 
+conda create -p `pwd`/conda-env/ -y
+conda activate `pwd`/conda-env
+conda install cuda -c nvidia -y
+
 set -e
 
 # Uncomment if pip complains it can't find a version

@@ -2,6 +2,9 @@
 *.m~
 *.asv
 env/
+conda-env/
 __pycache__/
 HDBET/
 HDBET
+romeo/julia-packages/
+romeo/julia-1.9.4/
