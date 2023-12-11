@@ -18,7 +18,11 @@ class FileLocations:
         self.loc_TEs = os.path.join(self.dir_phase_mag, 'echo_times.txt')
         self.loc_brainmask = os.path.join(self.dir_out_top, "brainmask.nii.gz")
         self.loc_dicomHeader = os.path.join(self.dir_phase_mag, 'dicom_header.json')
-        self.phase_unwrapped = os.path.join(self.dir_phase_mag, 'phase_unwrapped.nii.gz')
+
+        self.phase_unwrapped = os.path.join(self.dir_phase_mag, 'phase_corrected_unwrapped.nii.gz')
+        self.romeo_mask = os.path.join(self.dir_phase_mag, 'romeo_mask.nii.gz')
+        self.romeo_b0 = os.path.join(self.dir_phase_mag, 'romeo_b0.nii.gz')
+              
 
         self.dir_dicoms_out = os.path.join(dir_top, 'generated_dicoms/')
 

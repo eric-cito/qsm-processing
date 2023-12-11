@@ -1,6 +1,0 @@
-QSM_wrapper.m was written by Jingwen and calls QSM_processing_CPU.m 
-It can run ilsqr or QSMGAN.
-
-Jingwen_code has other folders wich can run iQSM. She typically runs ilsqr or iQSM. 
-Other single-step processing pipeline have more signal variation around brain edge.
-iQSM is end-to-end and can create QSM from just the phase data.

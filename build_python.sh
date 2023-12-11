@@ -8,35 +8,40 @@
 #   conda activate # If needed for python 3.9
 
 
-conda create -p `pwd`/conda-env/ -y
-conda activate `pwd`/conda-env
-conda install cuda -c nvidia -y
+# conda create -p `pwd`/conda-env/ -y
+# conda activate `pwd`/conda-env
+# conda install cuda -c nvidia -y
 
 set -e
+
+
+if [ -z "$1" ]; then
+    python="python3.9"
+else
+    python="$1"
+fi
+
+
+if [ -z "$2" ]; then
+    envName="env"
+else
+    envName="$2"
+fi
+
 
 # Uncomment if pip complains it can't find a version
 # pip3 install --upgrade pip --user
 
 
-python3.9 -m venv env
+$python -m venv $envName
 source env/bin/activate
 
 #python3 -m pip install --upgrade pip
-python3.9 -m pip install -r requirements.txt
+$python -m pip install -r requirements.txt
 
 echo 'Installing PythonUtils'
 if [ ! -d "PythonUtils" ]; then
     git clone git@git.ucsf.edu:lee-reid/PythonUtils.git
 fi
 
-PythonUtils/build.sh
-
-# # HD-BET
-# git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
-# bash HDBET/build.sh
-# HD-BET
-if [ ! -d "HDBET" ]; then
-    git clone git@git.ucsf.edu:lee-reid/HD-BET-for-python.git HDBET
-fi
-
-HDBET/build.sh
+PythonUtils/build.sh $python

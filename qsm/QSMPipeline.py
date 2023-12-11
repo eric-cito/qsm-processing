@@ -6,7 +6,7 @@ import SimpleITK as sitk
 from .DicomToPhasePipeline import DicomToPhasePipeline
 from .UnwrapPhasePipeline import UnwrapPhasePipeline
 from .FileLocations import FileLocations
-from .SkullStripper import SkullStripper
+from PythonUtils.SkullStripper import SkullStripper
 from .DicomGenerator import DicomGenerator
 
 class BackgroundFieldRemovalAndDipoleInversionPipeline():
@@ -23,17 +23,18 @@ class BackgroundFieldRemovalAndDipoleInversionPipeline():
 
 class QSMPipeline:
 
-    def __init__(self,locs:FileLocations):
+    def __init__(self, locs:FileLocations, useGPU=True):
         self.locs = locs
+        self.useGPU = useGPU
 
-    def Run(self):
+    def Run(self) -> None:
         os.makedirs(self.locs.dir_out_top, exist_ok=True)
 
         (phase, mag, TEs) = DicomToPhasePipeline(self.locs).Run()
 
         print("Skull stripping")
         brainMask = self.GetOrCalcBrainmask(mag)
-        unwrapped = UnwrapPhasePipeline(phase, mag, brainMask).Run()
+        unwrapped = UnwrapPhasePipeline(phase, mag, brainMask, TEs, self.locs).Run()
 
         dipoleInverted = BackgroundFieldRemovalAndDipoleInversionPipeline(unwrapped, brainMask, self.locs).Run()
 
@@ -41,7 +42,7 @@ class QSMPipeline:
 
         DicomGenerator(sitk.Cast(final * 1000, sitk.sitkInt16), self.locs.dir_dicoms_out, self.locs.loc_dicomHeader).Run()
 
-    def GetOrCalcBrainmask(self, mag):
+    def GetOrCalcBrainmask(self, mag) -> sitk.Image:
         # The last echo has the least skull visible
         # so probably will do best in general
         # Though the brain looks strange.
@@ -49,10 +50,10 @@ class QSMPipeline:
         # where the skull and brain may look more like
         # the NN is expecting
         lastEcho = self.ExtractLastInSeries(mag)
-        brainMask = SkullStripper(lastEcho).GetOrCalcBrainmask(self.locs.loc_brainmask)
+        brainMask = SkullStripper(lastEcho, useGPU=self.useGPU).CalcBrainmask(self.locs.loc_brainmask)
         return brainMask
 
-    def ExtractLastInSeries(self, image:sitk.Image):
+    def ExtractLastInSeries(self, image:sitk.Image) -> sitk.Image:
         '''
         Extracts the last frame in a series of 3D imaages
         '''

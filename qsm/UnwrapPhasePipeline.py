@@ -1,11 +1,7 @@
 from PythonUtils import AssertImage
 from .FileLocations import FileLocations
 from .Romeo import RunRomeo_sitk
-
-
 import SimpleITK as sitk
-
-
 import os
 from typing import List
 
@@ -47,4 +43,8 @@ class UnwrapPhasePipeline:
             print(self.locs.phase_unwrapped, "found. Unwrapping not re-performed")
             return sitk.ReadImage(self.locs.phase_unwrapped)
         else:
-            return RunRomeo_sitk(self.phase, self.magnitude, self.TEs, self.locs.phase_unwrapped)
+            return RunRomeo_sitk(self.phase, self.magnitude, self.TEs, 
+                                 None, # we have no use for the corrected wrapped image and it is huge
+                                 self.locs.romeo_mask,
+                                 self.locs.phase_unwrapped,
+                                 self.locs.romeo_b0)
