@@ -23,7 +23,7 @@ class BackgroundFieldRemovalAndDipoleInversionPipeline():
 
 class QSMPipeline:
 
-    def __init__(self, locs:FileLocations, useGPU=True):
+    def __init__(self, locs:FileLocations, useGPU=False):
         self.locs = locs
         self.useGPU = useGPU
 
@@ -44,22 +44,19 @@ class QSMPipeline:
 
     def GetOrCalcBrainmask(self, mag) -> sitk.Image:
         # The last echo has the least skull visible
-        # so probably will do best in general
-        # Though the brain looks strange.
-        # If having issues, change to the first echo
-        # where the skull and brain may look more like
-        # the NN is expecting
-        lastEcho = self.ExtractLastInSeries(mag)
+        # and first seems to have the most signal
+        # Have had issues using the last echo
+        lastEcho = self.ExtractFirstInSeries(mag)
         brainMask = SkullStripper(lastEcho, useGPU=self.useGPU).CalcBrainmask(self.locs.loc_brainmask)
         return brainMask
 
-    def ExtractLastInSeries(self, image:sitk.Image) -> sitk.Image:
+    def ExtractFirstInSeries(self, image:sitk.Image) -> sitk.Image:
         '''
         Extracts the last frame in a series of 3D imaages
         '''
         size = list(image.GetSize())
         newSize = [size[0], size[1], size[2], 0]
-        index = [0, 0, 0, size[3]-1]
+        index = [0, 0, 0, 0] # Last index here for the series. e.g. size[3]-1
         return sitk.Extract(image, size=newSize, index=index)
 
 

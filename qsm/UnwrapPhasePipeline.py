@@ -43,7 +43,7 @@ class UnwrapPhasePipeline:
             print(self.locs.phase_unwrapped, "found. Unwrapping not re-performed")
             return sitk.ReadImage(self.locs.phase_unwrapped)
         else:
-            return RunRomeo_sitk(self.phase, self.magnitude, self.TEs, 
+            return RunRomeo_sitk(self.phase, self.magnitude, self.TEs, self.brainmask, 
                                  None, # we have no use for the corrected wrapped image and it is huge
                                  self.locs.romeo_mask,
                                  self.locs.phase_unwrapped,
