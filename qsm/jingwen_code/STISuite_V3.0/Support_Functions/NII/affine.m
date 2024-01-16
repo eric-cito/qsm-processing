@@ -137,14 +137,14 @@ function [new_img, new_M] = affine(old_img, old_M, new_elem_size, verbose, bg, m
 
    %  Vertices of img in voxel
    %
-   XYZvox = [	1           1           1
-                1           1           old_dim(3)
-                1           old_dim(2)	1
-                1           old_dim(2)	old_dim(3)
-                old_dim(1)	1           1
-                old_dim(1)	1           old_dim(3)
-                old_dim(1)	old_dim(2)	1
-                old_dim(1)	old_dim(2)	old_dim(3)   ]';
+   XYZvox = [	1		1		1
+		1		1		old_dim(3)
+		1		old_dim(2)	1
+		1		old_dim(2)	old_dim(3)
+		old_dim(1)	1		1
+		old_dim(1)	1		old_dim(3)
+		old_dim(1)	old_dim(2)	1
+		old_dim(1)	old_dim(2)	old_dim(3)   ]';
 
    old_R = old_M(1:3,1:3);
    old_T = old_M(1:3,4);

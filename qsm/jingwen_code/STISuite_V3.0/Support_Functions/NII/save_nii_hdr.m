@@ -1,19 +1,7 @@
-%  Save NIFTI dataset header. Support both *.nii and *.hdr/*.img file
-%  extension.
-%  
-%  Usage: save_nii_hdr(hdr, fid)
-%  
-%  hdr - struct with NIFTI header fields.
-%  
-%  fileprefix - NIFTI file name without extension.
-%  
-%  Part of this file is copied and modified from:
-%  http://www.mathworks.com/matlabcentral/fileexchange/1878-mri-analyze-tools
-%  
-%  NIFTI data format can be found on: http://nifti.nimh.nih.gov
-%  
+%  internal function
+  
 %  - Jimmy Shen (jimmy@rotman-baycrest.on.ca)
-%
+
 function save_nii_hdr(hdr, fid)
    
    if ~exist('hdr','var') | ~exist('fid','var')

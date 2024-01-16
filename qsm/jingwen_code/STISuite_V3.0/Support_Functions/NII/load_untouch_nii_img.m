@@ -2,7 +2,7 @@
 
 %  - Jimmy Shen (jimmy@rotman-baycrest.on.ca)
 
-function [img,hdr] = load_nii_img(hdr,filetype,fileprefix,machine,img_idx,dim5_idx,dim6_idx,dim7_idx,old_RGB,slice_idx)
+function [img,hdr] = load_untouch_nii_img(hdr,filetype,fileprefix,machine,img_idx,dim5_idx,dim6_idx,dim7_idx,old_RGB,slice_idx)
 
    if ~exist('hdr','var') | ~exist('filetype','var') | ~exist('fileprefix','var') | ~exist('machine','var')
       error('Usage: [img,hdr] = load_nii_img(hdr,filetype,fileprefix,machine,[img_idx],[dim5_idx],[dim6_idx],[dim7_idx],[old_RGB],[slice_idx]);');
@@ -217,7 +217,9 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
       error('This datatype is not supported'); 
    end
 
-   hdr.dime.dim(find(hdr.dime.dim < 1)) = 1;
+   tmp = hdr.dime.dim(2:end);
+   tmp(find(tmp < 1)) = 1;
+   hdr.dime.dim(2:end) = tmp;
 
    %  move pointer to the start of image block
    %
@@ -289,8 +291,6 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
       end
    else
 
-      img = [];
-
       d1 = hdr.dime.dim(2);
       d2 = hdr.dime.dim(3);
       d3 = hdr.dime.dim(4);
@@ -318,6 +318,35 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
       if isempty(dim7_idx)
          dim7_idx = 1:d7;
       end
+      
+      %ROMAN: begin
+      roman = 1;
+      if(roman)
+
+         %  compute size of one slice
+         %
+         img_siz = prod(hdr.dime.dim(2:3));
+
+         %  For complex float32 or complex float64, voxel values
+         %  include [real, imag]
+         %
+         if hdr.dime.datatype == 32 | hdr.dime.datatype == 1792
+            img_siz = img_siz * 2;
+         end
+
+         %MPH: For RGB24, voxel values include 3 separate color planes
+         %
+         if hdr.dime.datatype == 128 | hdr.dime.datatype == 511
+            img_siz = img_siz * 3;
+         end
+
+         % preallocate img
+         img = zeros(img_siz, length(slice_idx)*length(img_idx)*length(dim5_idx)*length(dim6_idx)*length(dim7_idx) );
+         currentIndex = 1;
+      else
+        img = [];
+      end; %if(roman)
+      % ROMAN: end
 
       for i7=1:length(dim7_idx)
          for i6=1:length(dim6_idx)
@@ -330,23 +359,29 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
                   %  applied.
                   %
                   pos = sub2ind([d1 d2 d3 d4 d5 d6 d7], 1, 1, slice_idx(s), ...
-			img_idx(t), dim5_idx(i5),dim6_idx(i6),dim7_idx(i7)) -1;
+			                    img_idx(t), dim5_idx(i5),dim6_idx(i6),dim7_idx(i7)) -1;
                   pos = pos * hdr.dime.bitpix/8;
 
-                  img_siz = prod(hdr.dime.dim(2:3));
+                  % ROMAN: begin
+                  if(roman)
+                      % do nothing
+                  else
+                     img_siz = prod(hdr.dime.dim(2:3));
 
-                  %  For complex float32 or complex float64, voxel values
-                  %  include [real, imag]
-                  %
-                  if hdr.dime.datatype == 32 | hdr.dime.datatype == 1792
-                     img_siz = img_siz * 2;
-                  end
+                     %  For complex float32 or complex float64, voxel values
+                     %  include [real, imag]
+                     %
+                     if hdr.dime.datatype == 32 | hdr.dime.datatype == 1792
+                        img_siz = img_siz * 2;
+                     end
 
-                  %MPH: For RGB24, voxel values include 3 separate color planes
-                  %
-                  if hdr.dime.datatype == 128 | hdr.dime.datatype == 511
-	             img_siz = img_siz * 3;
-                  end
+                     %MPH: For RGB24, voxel values include 3 separate color planes
+                     %
+                     if hdr.dime.datatype == 128 | hdr.dime.datatype == 511
+                        img_siz = img_siz * 3;
+                     end
+                  end; % if (roman)
+                  % ROMAN: end
          
                   if filetype == 2
                      fseek(fid, pos + hdr.dime.vox_offset, 'bof');
@@ -357,14 +392,22 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
                   %  For each frame, fread will read precision of value
                   %  in img_siz times
                   %
-                  img = [img fread(fid, img_siz, sprintf('*%s',precision))];
+                  % ROMAN: begin
+                  if(roman)
+                     img(:,currentIndex) = fread(fid, img_siz, sprintf('*%s',precision));
+                     currentIndex = currentIndex +1;
+                  else
+                     img = [img fread(fid, img_siz, sprintf('*%s',precision))];
+                  end; %if(roman)
+                  % ROMAN: end
+                  
                end
                end
             end
          end
       end
    end
-
+   
    %  For complex float32 or complex float64, voxel values
    %  include [real, imag]
    %
@@ -377,8 +420,8 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
 
    %  Update the global min and max values 
    %
-   hdr.dime.glmax = max(double(img(:)));
-   hdr.dime.glmin = min(double(img(:)));
+   hdr.dime.glmax = double(max(img(:)));
+   hdr.dime.glmin = double(min(img(:)));
 
    %  old_RGB treat RGB slice by slice, now it is treated voxel by voxel
    %
@@ -392,7 +435,7 @@ function [img,hdr] = read_image(hdr,filetype,fileprefix,machine,img_idx,dim5_idx
       img = permute(img, [2 3 4 1 5 6 7 8]);
    elseif hdr.dime.datatype == 511 & hdr.dime.bitpix == 96
       img = double(img(:));
-      img = (img - min(img))/(max(img) - min(img));
+      img = single((img - min(img))/(max(img) - min(img)));
       % remove squeeze
       img = (reshape(img, [3 hdr.dime.dim(2:3) length(slice_idx) length(img_idx) length(dim5_idx) length(dim6_idx) length(dim7_idx)]));
       img = permute(img, [2 3 4 1 5 6 7 8]);

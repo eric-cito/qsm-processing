@@ -367,6 +367,7 @@ function [hdr, orient] = change_hdr(hdr, tolerance, preferredForm)
       end
 
       qfac = hdr.dime.pixdim(1);
+      if qfac==0, qfac = 1; end
       i = hdr.dime.pixdim(2);
       j = hdr.dime.pixdim(3);
       k = qfac * hdr.dime.pixdim(4);
@@ -464,6 +465,8 @@ function [hdr, orient] = change_hdr(hdr, tolerance, preferredForm)
       hdr.dime.xyzt_units = char(bitset(hdr.dime.xyzt_units,2,1));
       hdr.dime.xyzt_units = char(bitset(hdr.dime.xyzt_units,3,0));
    end
+
+   hdr.dime.pixdim = abs(hdr.dime.pixdim);
 
    return;					% change_hdr
 

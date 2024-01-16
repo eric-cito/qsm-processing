@@ -1,117 +1,77 @@
 % QSM_processing 
+% Runs QSM processing via SEPIA. This code simply prepared data for this
 % Written by Jingwen
 % Modified by Melanie
+% Reworked by Lee
 
-%% add path
 clear all
+
+%% Settings
+input_data_path = '/Users/lee/data/pda440';
+output_data_path = '/Users/lee/data/pda440/processed/';
+correctFilter = false;
+
+loc_dcm2niix = '/opt/homebrew/bin/dcm2niix';
+loc_fsl = '/Users/lee/binaries/fsl/share/fsl/bin/';
+%% add path
+dir_this = fileparts(mfilename('fullpath'));
+
 warning('off');
-addpath(genpath('/home/lreid/qsm/qsm/jingwen_code'));
-addpath('/data/morrison/scripts/matlab_snippets/nifti_tools');
-addpath('/home/lreid/qsm');
+addpath(genpath2(dir_this, '.git'));
+addpath(loc_fsl)
 
 %% set up data paths
-
-dir_top = '/data/morrison/wip/lee/nov6/PDa434_no.consent.yet-addpost/'; % uigedir % must end with /s
-dir_dicoms_in = strcat(dir_top, 'qsm_dicoms/brain_ax_3d_swi_v1/');
-ID1 = extractBefore(dir_dicoms_in,'qsm');
+ID1 = extractBefore(input_data_path,'/qsm');
 ptid = extractAfter(ID1,'clin/');
 ptid = extractBefore(ptid,'_no.consent.yet-addpost');
 
-dir_out_top = [dir_top 'processed_QSM/'];
-dir_raw_nii = strcat(dir_out_top, 'raw/');
-%dir_organised_dicoms = strcat(dir_out_top, 'raw/');
-dir_offset_fixed = strcat(dir_out_top, 'offset_fixed/');
-dir_phase_mag = strcat(dir_out_top, 'phase_mag/');
-
-loc_phase = strcat(dir_phase_mag, 'Phase.nii.gz');
-loc_magnitude = strcat(dir_phase_mag, 'Magni.nii.gz');
-
-%% Execution options
+cd(input_data_path);
 
 
-mkdir(dir_out_top)
-%cd(dir_dicoms_in);
-
-[locs_mag, locs_imag, locs_real] = ConvertDicoms(dir_dicoms_in, dir_raw_nii);
-
-noEchoes = length(locs_mag);
-
-if ~(isfile(loc_phase) && isfile(loc_magnitude))
-    locs_phase = [];
-    
-    for iEcho=1:noEchoes
-        locs_phase = [locs_phase, CreatePhase(locs_imag(iEcho), locs_real(iEcho), dir_out_top)];
-    end
-    
-    mkdir(dir_phase_mag)
-    ConcatNiftis(locs_mag, loc_magnitude);
-    ConcatNiftis(locs_phase, loc_phase);
-end
-
-File = ReadNifti(loc_phase);
-
-% %% Combine mag & phase echoes
-
-% File = load_untouch_nii([ptid '_qsm_e1.nii']);
-% Mag1 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e2.nii']);
-% Mag2 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e3.nii']);
-% Mag3 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e4.nii']);
-% Mag4 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e5.nii']);
-% Mag5 = File.img;
-
-% Magni = cat(4, Mag1, Mag2, Mag3, Mag4, Mag5);
-% File.img = Magni;
-% File.hdr.dime.dim(5) = 5;
-% save_untouch_nii(File, 'Magni');
-
-% File = load_untouch_nii([ptid '_qsm_e1_phase_fixed.nii']);
-% Ph1 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e2_phase_fixed.nii']);
-% Ph2 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e3_phase_fixed.nii']);
-% Ph3 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e4_phase_fixed.nii']);
-% Ph4 = File.img;
-% File = load_untouch_nii([ptid '_qsm_e5_phase_fixed.nii']);
-% Ph5 = File.img;
-
-% Phase = cat(4, Ph1, Ph2, Ph3, Ph4, Ph5);
-% File.img = Phase;
-% File.hdr.dime.dim(5) = 5;
-% save_untouch_nii(File, 'Phase');
+%% Step 1: sort dicoms
+myEchos = OrganiseDicoms(input_data_path);
 
 
-% system('gzip Magni.nii');
-% system('gzip Phase.nii');
+%% Step 2 Correct offset for Re/Im images and overwrite
+CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc_dcm2niix);
+
+%% Step 3 Create Phase from Real + Im
+CreatePhase(input_data_path, myEchos)
+
+%% Combine mag & phase echoes
+fileLocator = FileLocator(input_data_path);
+ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
+ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
 
 
 %% Prepare header file for processing
 
-% set up echo times (0018,0081) units=e-3 seconds
+% error 'CODE DOES NOT WORK(!) TE files are in qsm_dicoms/echo*/real/*.json Manual override below'
+% 
+% te1 = 0.2;
+% te2 = 0.22628;
+% te3 = 0.25256;
+% te4 = 0.27884;
 
-echoes = zeros(1,noEchoes); %create empty vector to enter echos
+%% Find Echo times (0018,0081)
 
-for echo = 1:noEchoes
-    fname = GetLoc(dir_raw_nii, echo, "mag", "json"); 
+echoes = zeros(1,length(myEchos)); %create empty vector to enter echos
+
+for iEcho = myEchos
+    fname = fileLocator.GetBasicTypeWithSuffix(iEcho, 'real', 'json'); 
     fid = fopen(fname); 
     raw = fread(fid,inf); 
     str = char(raw'); 
     fclose(fid); 
     val = jsondecode(str);
-    echoes(:,echo)= val.EchoTime;
+    echoes(:,iEcho)= val.EchoTime;
 end
 
-for iEcho = 1:noEchoes
-te1 = echoes(1,1);
-te2 = echoes(1,2);
-te3 = echoes(1,3);
-te4 = echoes(1,4);
-te5 = echoes(1,5);
-end
+%te1 = echoes(1,1);
+%te2 = echoes(1,2);
+%te3 = echoes(1,3);
+%te4 = echoes(1,4);
+%te5 = echoes(1,5);
 
 save('echoes.mat', 'echoes')
 
@@ -123,29 +83,28 @@ save('echoes.mat', 'echoes')
 
 % set up dimensions
 % spatial resolution of the data, in mm
-header.voxelSize = [1,1,1];  
+File = load_untouch_nii(fileLocator.GetBasicType(myEchos(1), 'real'));
+header.voxelSize = File.hdr.dime.pixdim([2,3,4]); % nifti - pixdim 2,3,4 have the dimensions. 
 % image matrix size
 %header.matrixSize = [224,224,60]; %for Phillips clinical QSM
-header.matrixSize = [File.hdr.dime.dim(2) File.hdr.dime.dim(3) File.hdr.dime.dim(4)];
-
+header.matrixSize = File.hdr.dime.dim([2,3,4]);
 % set up parameters
 header.b0 = 3;                  % magnetic field strength, in Tesla
 header.b0dir = [0;0;1];         % main magnetic field direction, [x,y,z]
-header.CF = header.b0*42.58*1e6;       % imaging frequency, in Hz (B0*gyromagnetic_ratio)
-header.te = [te1,te2,te3];  % echo time for each GRE image, in second
-header.delta_TE = te2-te1;      % echo spacing, in second
+header.CF = header.b0 * 42.58 * 1e6;       % imaging frequency, in Hz (B0*gyromagnetic_ratio)
+header.te = echoes;  % echo time for each GRE image, in seconds
+header.delta_TE = echoes(1,2) - echoes(1,1);      % echo spacing, in seconds
 
 % save to mat file
-loc_sepiaHeader=strcat(dir_phase_mag,'/sepia_header.mat');
-save([loc_sepiaHeader],'header');
+save([input_data_path '/sepia_header.mat'],'header');
 
 %% set up algorithm parameters
 
 %%% Please make sure the file names are the same as used below %%%%%%%%%%%%
-input.magnitudeFile     = [loc_magnitude];
-input.phaseFile         = [loc_phase];
+input.magnitudeFile     = [char(fileLocator.GetMagnitude_AllEchos())];
+input.phaseFile         = [char(fileLocator.GetPhase_AllEchos())];
 %%% Check name - end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-input.headerFile        = [loc_sepiaHeader];
+input.headerFile        = [input_data_path '/sepia_header.mat'];
 
 opts.writeLog           = 1;
 opts.isGPU              = 0;
@@ -157,22 +116,15 @@ opts.All                = 0;
 
 %% run
 
-QSMfile = dir(dir_phase_mag);
+QSMfile = dir(output_data_path);
 QSMfile([QSMfile.isdir]) = [];
 QSMfile(cellfun(@isempty,strfind({QSMfile.name},'QSM_'))) = [];
 
 %if (opts.All && length(QSMfile) < 10) || (~opts.All && length(QSMfile) < 2)
-    [Tcomp] = QSM_processing_CPU(input, dir_phase_mag, opts);
+    [Tcomp] = QSM_processing_CPU(input, output_data_path, opts);
 %else
     %fprintf(' >> Already have all QSM maps, skip QSM processing \n');
-
-    
-    
-    
-    %end
-
-
-    returns
+%end
 %
 %
 %
@@ -185,7 +137,7 @@ QSMfile(cellfun(@isempty,strfind({QSMfile.name},'QSM_'))) = [];
 %
 %
 %% (optional) convert to dicom
-
+error ABORT
 FileStruct = load_untouch_nii('QSM_iLSQR_meanEcho.nii.gz');
 img = -double(FileStruct.img); %place negative sign in front if contrast is bad
 img = img + 0.15;
@@ -365,276 +317,16 @@ system('send_to_pacs --in_dir /data/morrison/data/dystonia/Targeting/PHI_VS_0122
 % end
 % 
 
-
-
-
-function SortDicoms(input_data_dir, dir_out_top, noEchoesExpected)
-    % Organises dicoms by echo number
-    for i = 1:noEchoesExpected
-        mkdir([GetEchoDir(dir_out_top,i, 'real')])
-        mkdir([GetEchoDir(dir_out_top,i, 'imaginary')])
-        mkdir([GetEchoDir(dir_out_top,i, 'mag')])
+function ConcatImages(fileLocator, imgType, echoes, saveTo)
+    %ConcatImagesAndZip concats images for each echo into a single file
+    concated = [];
+    for iEcho = echoes
+        File = load_untouch_nii(fileLocator.GetBasicType(iEcho, imgType));
+        concated = cat(4, concated, File.img);
     end
 
-    myFiles = dir(fullfile(input_data_dir,'*.dcm')); %gets all dicom files in dir
-
-    if isempty(myFiles)
-        error(strcat("No files found in ", input_data_dir))
-    end
-
-    parfor k = 1:length(myFiles)
-        CopyDicomIfNotFound(string(myFiles(k).name), dir_out_top);
-    end
+    File.img = concated;
+    File.hdr.dime.dim(5) = length(echoes);
+    save_untouch_nii(File, saveTo);
 end
 
-function echoNum = CopyDicomIfNotFound(baseFileName, dir_out_top)
-        fprintf(1, 'Now reading %s\n', baseFileName);
-        dicomHeader = dicominfo(baseFileName);
-        echoNum = dicomHeader.EchoNumbers;
-        copyTo = GetEchoDir(dir_out_top, echoNum, GetGREImageType(dicomHeader));
-
-        if ~isfile(copyTo)
-            copyfile(baseFileName, copyTo, 'f');  
-        end
-
-        function type = GetGREImageType(dicomHeader)
-            % GE stores this information as a signed short of the 
-            % Private Image Type(0043,102F) tag. 
-            % The values 0, 1, 2, 3 correspond to magnitude, phase, real, and imaginary (respectively).
-            if dicomHeader.Private_0043_102f==0 %mag
-                type = 'mag';
-            elseif dicomHeader.Private_0043_102f==2 %real
-                type = 'real';
-            elseif dicomHeader.Private_0043_102f==3 %imaginary
-                type = 'imaginary';
-            else
-                error(['Unexpected code for tag (0043,102F): ', string(dicomHeader.Private_0043_102f)])
-            end
-        end
-
-    end
-
-
-
-function directory = GetEchoDir(dir_out_top, echoNo, type)
-    % Returns the directory holding dicoms for a specific echo
-    % type: provide real/imaginary/mag as a string
-    directory = strcat(dir_out_top,  'echo', string(echoNo), '/', type, '/');
-end
-
-
-function OffsetIntensitiesToTopLeftPixel(locFrom, locTo)
-    % Threadsafe so long as no I/O touching the files at hand
-    real1 = dicomread(locFrom);
-    real1_offset = real1(1,1);
-    real1 = real1 - real1_offset;
-    metadata = dicominfo(locFrom);
-
-    dicomwrite(real1, locTo, metadata, 'WritePrivate', true, 'CreateMode', 'Copy', 'UseMetadataBitDepths', true) 
-end
-
-function FixOffset(patientID, dir_in_top, dir_out_top, echoNumber, type)
-
-
-    dirIn = GetEchoDir(dir_in_top, echoNumber, type);
-    dirOut = GetEchoDir(dir_out_top, echoNumber, type);
-
-    myFiles = dir(fullfile(strcat(dirIn, '*.dcm')));
-
-    parfor k=1:length(myFiles)
-        fn = myFiles(k).name
-        locTo = strcat(dirOut, fn);
-        if ~isfile(locTo)
-            locFrom = strcat(dirIn, fn);
-            OffsetIntensitiesToTopLeftPixel(locFrom, locTo)
-        end
-    end
-
-end
-
-function loc_nii = DicomToNiiFromType(type, dir_in_top, dir_out_top, echoNumber)
-    echoNumber = string(echoNumber);
-    dir_dicoms = GetEchoDir(dir_in_top, echoNumber, type);
-    loc_nii = GetLocRawNii(dir_out_top, echoNumber, type);
-    DicomToNifti(dir_dicoms, loc_nii, type);    
-end
-
-function DicomToNifti(dir_dicoms, loc_nii, type)
-    cwd = pwd();
-    cd(dir_dicoms)
-    system('dcm2niix *')
-
-    for loc = dir(dir_dicoms)
-        if endsWith(loc, ".nii") && contains(loc, strcat(type, "*.nii"))
-            movefile(loc, loc_nii)
-            break
-        end
-    end
-
-
-    %display(strcat("mv ", type,"*.nii ", loc_nii))
-    %system(strcat("mv ", type,"*.nii ", loc_nii));
-    %system(['mv ' type '*.json ' patientID '_qsm_e' num2str(echoNumber) '_' type '_fixed.json']);
-    system('rm *.json');
-
-    if ~isfile(loc_nii)
-        error(strcat("Could not find converted file for type ", type, " in ", dir_dicoms))
-    end    
-
-    cd(cwd);
-end
-
-
-function loc = GetLocNii(dir_out, echoNumber, type)
-    loc = GetLoc(dir_out, echoNumber, type, "nii");
-end
-
-
-function loc = GetLoc(dir_out, echoNumber, type, suffix)
-    if isstring(echoNumber)
-        echoNumber = str2num(echoNumber)
-    end
-
-    if echoNumber < 10
-        % Rename values < 10 to 01, 02, etc so sorting works
-        echoNumber = strcat("0", num2str(echoNumber))
-    else
-        echoNumber = num2str(echoNumber)
-    end
-
-    loc = strcat(dir_out, "echo", echoNumber, "_", type, ".", suffix);
-end
-
-
-function loc_save_phase = CreatePhase(loc_imagin, loc_real, dir_out_top) % dir_in_top, dir_out_top, echoNumber)
-    %cd(myEchos(i).name)
-    %cd('real')
-    
-    echoNumber = ExtractEchoNumberFromFilename(loc_imagin);
-    
-    %loc_real =  DicomToNiiFromType('real', dir_in_top, dir_out_top, echoNumber);
-    %loc_imagin = DicomToNiiFromType('imaginary', dir_in_top, dir_out_top, echoNumber);
-
-
-    File = ReadNifti(loc_real);
-    Re = File.img;
-    File = ReadNifti(loc_imagin);
-    Im = File.img;
-
-    complex1=complex(double(Re),double(Im));
-    for m=1:2:size(complex1,3)
-        complex1(:,:,m) = -1*complex1(:,:,m); 
-    end
-    phase=angle(complex1);
-    File.img = double(phase);
-    File.hdr.dime.cal_max= pi;
-    File.hdr.dime.cal_min=-pi;
-    File.hdr.dime.datatype=16;
-    File.hdr.dime.bitpix=16;
-    loc_save_phase = GetLocNii(dir_out_top, echoNumber, 'phase');
-    save_untouch_nii(File,convertStringsToChars(loc_save_phase))    
-end
-
-
-function images = ReadNiftis(locations)
-    images = [];
-    for loc = locations
-        images = [images, ReadNifti(loc)];
-    end
-end
-
-
-function nifti = ReadNifti(loc)
-    % hack to get around nifti loading in dependency
-    nifti = load_untouch_nii(convertStringsToChars(loc));
-end
-
-function File = ConcatNiftis(filenames, loc_saveTo)
-    % Concatenates 3D niftis along the 4th dimension
-    % Images assumed to have the same header information
-
-    files = ReadNiftis(filenames);
-
-    imgData = [];
-    for file = files
-        imgData = cat(4,imgData, file.img);
-    end
-
-    File = files(1);
-    File.img = imgData;
-    File.hdr.dime.dim(5) = 5;
-    save_untouch_nii(File, loc_saveTo);
-
-end
-
-
-function [locs_mag, locs_imag, locs_real] = ConvertDicoms(dir_dicoms, dir_nii)
-
-    [locs_mag, locs_imag, locs_real] = GetNiftis();
-
-    if (~isempty(locs_mag)) && (length(locs_imag) == length(locs_mag)) && (length(locs_real) == length(locs_mag))
-        disp("Raw niftis found. Dicom conversion skipped");
-        return
-    end
-        
-
-    system(strcat("dcm2niix -m n -f echo%e_%z -o ", dir_nii ," -w 0 ", dir_dicoms));
-
-    % Files will be named
-    % magnitude: echoX_.nii 
-    % real: echoX_real.nii 
-    % imaginary: echoX_imaginary.nii 
-    % where X is the echo number
-
-    % Fix up file names
-    % -- mag files don't have a type listed
-    for loc = DirWithFullPaths(dir_nii,"*_.nii")
-        movefile(loc, strcat(extractBefore(loc, "_.nii"), "_mag.nii"));
-    end
-
-    for loc = DirWithFullPaths(dir_nii,"*_.json")
-        %if ~isstrprop(loc(end-4),"digit")
-            movefile(loc, strcat(extractBefore(loc, ".json"), "mag.json"));
-        %end
-    end
-    MoveToCorrectLocation(dir_nii, "nii")
-    MoveToCorrectLocation(dir_nii, "json")
-
-    [locs_mag, locs_imag, locs_real] = GetNiftis();
- 
-    function [locs_mag, locs_imag, locs_real] = GetNiftis()
-        locs_mag = sort(DirWithFullPaths(dir_nii, "*_mag.nii"));
-        locs_imag = sort(DirWithFullPaths(dir_nii, "*_imaginary.nii"));
-        locs_real = sort(DirWithFullPaths(dir_nii, "*_real.nii"));
-    end
-
-    function MoveToCorrectLocation(directory, suffix)
-        % Renames values < 10 to 01, 02, etc so sorting works
-        for loc = DirWithFullPaths(directory, strcat("*.",suffix))
-            number = ExtractEchoNumberFromFilename(loc);
-
-            pathRight = extractAfter(loc, "/echo");
-            type = extractBefore(extractAfter(pathRight, "_"),".");
-            destination = GetLoc(directory, number, type, suffix);
-
-            if loc ~= destination
-                movefile(loc, destination);
-            end
-        end
-    end
-end
-
-function locs = DirWithFullPaths(directory, searchPattern)
-    files = dir(strcat(directory, searchPattern));
-    if isempty(files)
-        locs = [];
-    else
-        locs = string(fullfile(directory, {files.name}));
-    end
-end
-
-function number = ExtractEchoNumberFromFilename(loc)
-    pathLeft = extractBefore(loc, "/echo");
-    pathRight = extractAfter(loc, "/echo");
-    number = str2num(extractBefore(pathRight, "_"));
-end

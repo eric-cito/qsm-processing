@@ -47,8 +47,12 @@ function menu_hdl = view_nii_menu(fig, varargin)
       reset_zoom(fig);
    case 'orient'
       orient;
+   case 'editvox'
+      editvox;
    case 'img_info'
       img_info;
+   case 'img_hist'
+      img_hist;
    case 'save_disp'
       save_disp;
    end
@@ -109,11 +113,19 @@ function menu_hdl = init(fig)
       nii_menu.Medit_orient = uimenu('Parent',nii_menu.Medit, ...
    	   'Label','Convert to RAS orientation', ...
            'Callback','view_nii_menu(''orient'');');
+
+      nii_menu.Medit_editvox = uimenu('Parent',nii_menu.Medit, ...
+   	   'Label','Edit voxel value at crosshair', ...
+           'Callback','view_nii_menu(''editvox'');');
    else
       nii_menu.Medit_orient = uimenu('Parent',nii_menu.Medit, ...
    	   'Label','Convert to RAS orientation', ...
            'separator','on', ...
            'Callback','view_nii_menu(''orient'');');
+
+      nii_menu.Medit_editvox = uimenu('Parent',nii_menu.Medit, ...
+   	   'Label','Edit voxel value at crosshair', ...
+           'Callback','view_nii_menu(''editvox'');');
    end
 
    if isempty(nii_menu.Mview)
@@ -123,11 +135,19 @@ function menu_hdl = init(fig)
       nii_menu.Mview_info = uimenu('Parent',nii_menu.Mview, ...
    	   'Label','Image Information', ...
            'Callback','view_nii_menu(''img_info'');');
+
+      nii_menu.Mview_info = uimenu('Parent',nii_menu.Mview, ...
+   	   'Label','Volume Histogram', ...
+           'Callback','view_nii_menu(''img_hist'');');
    else
       nii_menu.Mview_info = uimenu('Parent',nii_menu.Mview, ...
    	   'Label','Image Information', ...
            'separator','on', ...
            'Callback','view_nii_menu(''img_info'');');
+
+      nii_menu.Mview_info = uimenu('Parent',nii_menu.Mview, ...
+   	   'Label','Volume Histogram', ...
+           'Callback','view_nii_menu(''img_hist'');');
    end
 
    nii_menu.Mzoom = rri_zoom_menu(fig);
@@ -261,6 +281,12 @@ function orient
    nii_view = getappdata(fig, 'nii_view');
    nii = nii_view.nii;
 
+   if ~isempty(nii_view.bgimg)
+      msg = 'You can not modify an overlay image';
+      h = msgbox(msg, 'Error', 'modal');
+      return;
+   end
+
    old_pointer = get(fig,'Pointer');
    set(fig,'Pointer','watch');
 
@@ -272,19 +298,138 @@ function orient
    end
 
    oldopt = view_nii(fig);
-   opt.setarea = oldopt.area;
+   opt.command = 'updatenii';
    opt.usecolorbar = oldopt.usecolorbar;
+   opt.usepanel = oldopt.usepanel;
    opt.usecrosshair = oldopt.usecrosshair;
    opt.usestretch = oldopt.usestretch;
    opt.useimagesc = oldopt.useimagesc;
    opt.useinterp = oldopt.useinterp;
-   opt.command = 'updatenii';
+   opt.setarea = oldopt.area;
+   opt.setunit = oldopt.unit;
+   opt.setviewpoint = oldopt.viewpoint;
+   opt.setscanid = oldopt.scanid;
+   opt.setcbarminmax = oldopt.cbarminmax;
+   opt.setcolorindex = oldopt.colorindex;
+   opt.setcolormap = oldopt.colormap;
+   opt.setcolorlevel = oldopt.colorlevel;
+
+   if isfield(oldopt,'highcolor')
+      opt.sethighcolor = oldopt.highcolor;
+   end
 
    view_nii(fig, nii, opt);
    set(fig,'Pointer',old_pointer);
    reset_zoom(fig);
 
    return;					% orient
+
+
+%----------------------------------------------------------------
+function editvox
+
+   fig = gcbf;
+   nii_view = getappdata(fig, 'nii_view');
+
+   if ~isempty(nii_view.bgimg)
+      msg = 'You can not modify an overlay image';
+      h = msgbox(msg, 'Error', 'modal');
+      return;
+   end
+
+   nii = nii_view.nii;
+   oldopt = view_nii(fig);
+   sag = nii_view.imgXYZ.vox(1);
+   cor = nii_view.imgXYZ.vox(2);
+   axi = nii_view.imgXYZ.vox(3);
+
+   if nii_view.nii.hdr.dime.datatype == 128
+      imgvalue = [double(nii.img(sag,cor,axi,1,nii_view.scanid)) double(nii.img(sag,cor,axi,2,nii_view.scanid)) double(nii.img(sag,cor,axi,3,nii_view.scanid))];
+      init_val = sprintf('%7.4g %7.4g %7.4g',imgvalue);
+   elseif nii_view.nii.hdr.dime.datatype == 511
+      R = double(nii.img(sag,cor,axi,1,nii_view.scanid)) * (nii_view.nii.hdr.dime.glmax - ...
+		nii_view.nii.hdr.dime.glmin) + nii_view.nii.hdr.dime.glmin;
+      G = double(nii.img(sag,cor,axi,2,nii_view.scanid)) * (nii_view.nii.hdr.dime.glmax - ...
+		nii_view.nii.hdr.dime.glmin) + nii_view.nii.hdr.dime.glmin;
+      B = double(nii.img(sag,cor,axi,3,nii_view.scanid)) * (nii_view.nii.hdr.dime.glmax - ...
+		nii_view.nii.hdr.dime.glmin) + nii_view.nii.hdr.dime.glmin;
+      imgvalue = [R G B];
+      init_val = sprintf('%7.4g %7.4g %7.4g',imgvalue);
+   else
+      imgvalue = double(nii.img(sag,cor,axi,nii_view.scanid));
+      init_val = sprintf('%.6g',imgvalue);
+   end
+
+   old_pointer = get(fig,'Pointer');
+   set(fig,'Pointer','watch');
+
+   repeat = 1;
+   while repeat
+      if nii_view.nii.hdr.dime.datatype == 128 | nii_view.nii.hdr.dime.datatype == 511
+         init_val = inputdlg({'Replace the current voxel values with 3 new numbers:'}, ...
+		'Edit voxel value at crosshair', 1, {num2str(init_val)});
+      else
+         init_val = inputdlg({'Replace the current voxel value with 1 new number:'}, ...
+		'Edit voxel value at crosshair', 1, {num2str(init_val)});
+      end
+
+      if isempty(init_val)
+         set(fig,'Pointer',old_pointer);
+         return
+      end
+
+      imgvalue = str2num(init_val{1});
+
+      if ( (nii_view.nii.hdr.dime.datatype == 128 | nii_view.nii.hdr.dime.datatype == 511) ...
+		& length(imgvalue) ~= 3 ) | ...
+         ( (nii_view.nii.hdr.dime.datatype ~= 128 & nii_view.nii.hdr.dime.datatype ~= 511) ...
+		& length(imgvalue) ~= 1 )
+	% do nothing
+      else
+         repeat = 0;
+      end
+   end
+
+   if nii_view.nii.hdr.dime.datatype == 128
+      nii.img(sag,cor,axi,1,nii_view.scanid) = imgvalue(1);
+      nii.img(sag,cor,axi,2,nii_view.scanid) = imgvalue(2);
+      nii.img(sag,cor,axi,3,nii_view.scanid) = imgvalue(3);
+   elseif nii_view.nii.hdr.dime.datatype == 511
+      nii.img(sag,cor,axi,1,nii_view.scanid) = (imgvalue(1) - nii_view.nii.hdr.dime.glmin) ...
+		/ (nii_view.nii.hdr.dime.glmax - nii_view.nii.hdr.dime.glmin);
+      nii.img(sag,cor,axi,2,nii_view.scanid) = (imgvalue(2) - nii_view.nii.hdr.dime.glmin) ...
+		/ (nii_view.nii.hdr.dime.glmax - nii_view.nii.hdr.dime.glmin);
+      nii.img(sag,cor,axi,3,nii_view.scanid) = (imgvalue(3) - nii_view.nii.hdr.dime.glmin) ...
+		/ (nii_view.nii.hdr.dime.glmax - nii_view.nii.hdr.dime.glmin);
+   else
+      nii.img(sag,cor,axi,nii_view.scanid) = imgvalue;
+   end
+
+   opt.command = 'updatenii';
+   opt.usecolorbar = oldopt.usecolorbar;
+   opt.usepanel = oldopt.usepanel;
+   opt.usecrosshair = oldopt.usecrosshair;
+   opt.usestretch = oldopt.usestretch;
+   opt.useimagesc = oldopt.useimagesc;
+   opt.useinterp = oldopt.useinterp;
+   opt.setarea = oldopt.area;
+   opt.setunit = oldopt.unit;
+   opt.setviewpoint = oldopt.viewpoint;
+   opt.setscanid = oldopt.scanid;
+   opt.setcbarminmax = oldopt.cbarminmax;
+   opt.setcolorindex = oldopt.colorindex;
+   opt.setcolormap = oldopt.colormap;
+   opt.setcolorlevel = oldopt.colorlevel;
+
+   if isfield(oldopt,'highcolor')
+      opt.sethighcolor = oldopt.highcolor;
+   end
+
+   view_nii(fig, nii, opt);
+   set(fig,'Pointer',old_pointer);
+   reset_zoom(fig);
+
+   return;					% editvox
 
 
 %----------------------------------------------------------------
@@ -314,4 +459,22 @@ function save_disp
    set(gcbf,'Pointer',old_pointer);
 
    return;					% save_disp
+
+
+%----------------------------------------------------------------
+function img_hist
+
+   nii_view = getappdata(gcbf, 'nii_view');
+   N = hist(double(nii_view.nii.img(:)),256);
+   x = linspace(double(min(nii_view.nii.img(:))), double(max(nii_view.nii.img(:))), 256);
+   figure;bar(x,N);
+   set(gcf, 'number', 'off', 'name', 'Volume Histogram');
+   set(gcf, 'windowstyle', 'modal');	% no zoom ...
+
+   xspan = max(x) - min(x) + 1;
+   yspan = max(N) + 1;
+   set(gca, 'xlim', [min(x)-xspan/20, max(x)+xspan/20]);
+   set(gca, 'ylim', [-yspan/20, max(N)+yspan/20]);
+
+   return;					% img_hist
 

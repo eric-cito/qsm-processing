@@ -29,8 +29,9 @@
 %    16 Floating point    (single or float32, bitpix=32) % DT_FLOAT32, NIFTI_TYPE_FLOAT32 
 %    32 Complex, 2 float32      (Use float32, bitpix=64) % DT_COMPLEX64, NIFTI_TYPE_COMPLEX64
 %    64 Double precision  (double or float64, bitpix=64) % DT_FLOAT64, NIFTI_TYPE_FLOAT64 
-%   128 Red-Green-Blue            (Use uint8, bitpix=24) % DT_RGB24, NIFTI_TYPE_RGB24 
+%   128 uint RGB                  (Use uint8, bitpix=24) % DT_RGB24, NIFTI_TYPE_RGB24 
 %   256 Signed char            (schar or int8, bitpix=8) % DT_INT8, NIFTI_TYPE_INT8 
+%   511 Single RGB              (Use float32, bitpix=96) % DT_RGB96, NIFTI_TYPE_RGB96
 %   512 Unsigned short               (uint16, bitpix=16) % DT_UNINT16, NIFTI_TYPE_UNINT16 
 %   768 Unsigned integer             (uint32, bitpix=32) % DT_UNINT32, NIFTI_TYPE_UNINT32 
 %  1024 Signed long long              (int64, bitpix=64) % DT_INT64, NIFTI_TYPE_INT64
@@ -62,32 +63,67 @@ function save_nii(nii, fileprefix, old_RGB)
    if ~exist('old_RGB','var') | isempty(old_RGB)
       old_RGB = 0;
    end
+
+   v = version;
+
+   %  Check file extension. If .gz, unpack it into temp folder
+   %
+   if length(fileprefix) > 2 & strcmp(fileprefix(end-2:end), '.gz')
+
+      if ~strcmp(fileprefix(end-6:end), '.img.gz') & ...
+	 ~strcmp(fileprefix(end-6:end), '.hdr.gz') & ...
+	 ~strcmp(fileprefix(end-6:end), '.nii.gz')
+
+         error('Please check filename.');
+      end
+
+      if str2num(v(1:3)) < 7.1 | ~usejava('jvm')
+         error('Please use MATLAB 7.1 (with java) and above, or run gunzip outside MATLAB.');
+      else
+         gzFile = 1;
+         fileprefix = fileprefix(1:end-3);
+      end
+   end
    
    filetype = 1;
 
    %  Note: fileprefix is actually the filename you want to save
    %   
-   if findstr('.nii',fileprefix)
+   if findstr('.nii',fileprefix) & strcmp(fileprefix(end-3:end), '.nii')
       filetype = 2;
-      fileprefix = strrep(fileprefix,'.nii','');
+      fileprefix(end-3:end)='';
    end
    
-   if findstr('.hdr',fileprefix)
-      fileprefix = strrep(fileprefix,'.hdr','');
+   if findstr('.hdr',fileprefix) & strcmp(fileprefix(end-3:end), '.hdr')
+      fileprefix(end-3:end)='';
    end
    
-   if findstr('.img',fileprefix)
-      fileprefix = strrep(fileprefix,'.img','');
+   if findstr('.img',fileprefix) & strcmp(fileprefix(end-3:end), '.img')
+      fileprefix(end-3:end)='';
    end
-   
+
    write_nii(nii, filetype, fileprefix, old_RGB);
+
+   %  gzip output file if requested
+   %
+   if exist('gzFile', 'var')
+      if filetype == 1
+         gzip([fileprefix, '.img']);
+         delete([fileprefix, '.img']);
+         gzip([fileprefix, '.hdr']);
+         delete([fileprefix, '.hdr']);
+      elseif filetype == 2
+         gzip([fileprefix, '.nii']);
+         delete([fileprefix, '.nii']);
+      end;
+   end;
 
    if filetype == 1
 
       %  So earlier versions of SPM can also open it with correct originator
       %
       M=[[diag(nii.hdr.dime.pixdim(2:4)) -[nii.hdr.hist.originator(1:3).*nii.hdr.dime.pixdim(2:4)]'];[0 0 0 1]];
-      save(fileprefix, 'M');
+      save([fileprefix '.mat'], 'M');
    end
    
    return					% save_nii
@@ -124,6 +160,8 @@ function write_nii(nii, filetype, fileprefix, old_RGB)
       hdr.dime.bitpix = int16(24); precision = 'uint8';
    case 256 
       hdr.dime.bitpix = int16(8 ); precision = 'int8';
+   case 511,
+      hdr.dime.bitpix = int16(96); precision = 'float32';
    case 512 
       hdr.dime.bitpix = int16(16); precision = 'uint16';
    case 768 
@@ -212,6 +250,21 @@ function write_nii(nii, filetype, fileprefix, old_RGB)
       end
    end
 
+   if double(hdr.dime.datatype) == 511
+
+      %  RGB planes are expected to be in the 4th dimension of nii.img
+      %
+      if(size(nii.img,4)~=3)
+         error(['The NII structure does not appear to have 3 RGB color planes in the 4th dimension']);
+      end
+
+      if old_RGB
+         nii.img = permute(nii.img, [1 2 4 3 5 6 7 8]);
+      else
+         nii.img = permute(nii.img, [4 1 2 3 5 6 7 8]);
+      end
+   end
+
    %  For complex float32 or complex float64, voxel values
    %  include [real, imag]
    %
@@ -222,7 +275,7 @@ function write_nii(nii, filetype, fileprefix, old_RGB)
    end
 
    if skip_bytes
-      fwrite(fid, ones(1,skip_bytes), 'uint8');
+      fwrite(fid, zeros(1,skip_bytes), 'uint8');
    end
 
    fwrite(fid, nii.img, precision);

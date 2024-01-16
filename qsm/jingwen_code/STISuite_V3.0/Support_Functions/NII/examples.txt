@@ -95,9 +95,19 @@
 		opt.command = 'updatenii';
 		view_nii(gcf, nii, opt);
 
+	This is an example to plot EEG source imaging on top of T1 background:
+		1. download overlay.zip and unzip it from:
+		   http://www.rotman-baycrest.on.ca/~jimmy/NIFTI/overlay.zip
+		2. T1 = load_nii('T1.nii');
+		3. EEG = load_nii('EEG.nii');
+		4. option.setvalue.idx = find(EEG.img);
+		5. option.setvalue.val = EEG.img(option.setvalue.idx);
+		6. option.useinterp = 1;
+		7. option.setviewpoint = [62 48 46];
+		8. view_nii(T1, option);
+
 
 - Contrast and Brightness are available under Gray and Bipolar colormap:
-
 
 	Increase contrast in Gray colormap will make high end values
 	more distinguishable by sacrificing the low end values; The

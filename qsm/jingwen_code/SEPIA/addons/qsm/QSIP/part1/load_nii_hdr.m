@@ -51,7 +51,9 @@ function [hdr, filetype, fileprefix, machine] = load_nii_hdr(fileprefix)
    machine = 'ieee-le';
    new_ext = 0;
 
-   if findstr('.nii',fileprefix)
+   if findstr('.nii.gz',fileprefix)
+      error '.gz files are not supported'
+   elseif findstr('.nii',fileprefix)
       new_ext = 1;
       fileprefix = strrep(fileprefix,'.nii','');
    end

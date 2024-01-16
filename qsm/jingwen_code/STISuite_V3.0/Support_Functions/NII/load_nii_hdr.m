@@ -1,47 +1,7 @@
-%  Load NIFTI dataset header. Support both *.nii and *.hdr/*.img file
-%  extension. If file extension is not provided, *.hdr/*.img will be 
-%  used as default.
-%  
-%  Usage: [hdr, filetype, fileprefix, machine] = load_nii_hdr(filename)
-%  
-%  filename - NIFTI file name.
-%  
-%  Returned values:
-%  
-%  hdr - struct with NIFTI header fields.
-%  
-%  filetype	- 0 for Analyze format (*.hdr/*.img);
-%		  1 for NIFTI format in 2 files (*.hdr/*.img);
-%		  2 for NIFTI format in 1 file (*.nii).
-%  
-%  fileprefix - NIFTI file name without extension.
-%  
-%  machine    - a string, see below for details. The default here is 'ieee-le'.
-%
-%    'native'      or 'n' - local machine format - the default
-%    'ieee-le'     or 'l' - IEEE floating point with little-endian
-%                           byte ordering
-%    'ieee-be'     or 'b' - IEEE floating point with big-endian
-%                           byte ordering
-%    'vaxd'        or 'd' - VAX D floating point and VAX ordering
-%    'vaxg'        or 'g' - VAX G floating point and VAX ordering
-%    'cray'        or 'c' - Cray floating point with big-endian
-%                           byte ordering
-%    'ieee-le.l64' or 'a' - IEEE floating point with little-endian
-%                           byte ordering and 64 bit long data type
-%    'ieee-be.l64' or 's' - IEEE floating point with big-endian byte
-%                           ordering and 64 bit long data type.
-%  
-%  Number of scanned images in the file can be obtained by:
-%  num_scan = hdr.dime.dim(5)
-%
-%  Part of this file is copied and modified from:
-%  http://www.mathworks.com/matlabcentral/fileexchange/1878-mri-analyze-tools
-%
-%  NIFTI data format can be found on: http://nifti.nimh.nih.gov
-%
+%  internal function
+
 %  - Jimmy Shen (jimmy@rotman-baycrest.on.ca)
-%
+
 function [hdr, filetype, fileprefix, machine] = load_nii_hdr(fileprefix)
 
    if ~exist('fileprefix','var'),
@@ -51,17 +11,17 @@ function [hdr, filetype, fileprefix, machine] = load_nii_hdr(fileprefix)
    machine = 'ieee-le';
    new_ext = 0;
 
-   if findstr('.nii',fileprefix)
+   if findstr('.nii',fileprefix) & strcmp(fileprefix(end-3:end), '.nii')
       new_ext = 1;
-      fileprefix = strrep(fileprefix,'.nii','');
+      fileprefix(end-3:end)='';
    end
 
-   if findstr('.hdr',fileprefix)
-      fileprefix = strrep(fileprefix,'.hdr','');
+   if findstr('.hdr',fileprefix) & strcmp(fileprefix(end-3:end), '.hdr')
+      fileprefix(end-3:end)='';
    end
 
-   if findstr('.img',fileprefix)
-      fileprefix = strrep(fileprefix,'.img','');
+   if findstr('.img',fileprefix) & strcmp(fileprefix(end-3:end), '.img')
+      fileprefix(end-3:end)='';
    end
 
    if new_ext
@@ -250,7 +210,7 @@ function [ dime ] = image_dimension(fid)
     dime.datatype   = fread(fid,1,'int16')';
     dime.bitpix     = fread(fid,1,'int16')';
     dime.slice_start = fread(fid,1,'int16')';
-    dime.pixdim     = abs(fread(fid,8,'float32')');
+    dime.pixdim     = fread(fid,8,'float32')';
     dime.vox_offset = fread(fid,1,'float32')';
     dime.scl_slope  = fread(fid,1,'float32')';
     dime.scl_inter  = fread(fid,1,'float32')';
