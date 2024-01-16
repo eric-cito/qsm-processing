@@ -13,6 +13,7 @@ correctFilter = false;
 
 loc_dcm2niix = '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/Users/lee/binaries/fsl/share/fsl/bin/';
+
 %% add path
 dir_this = fileparts(mfilename('fullpath'));
 
@@ -38,7 +39,7 @@ CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc
 %% Step 3 Create Phase from Real + Im
 CreatePhase(input_data_path, myEchos)
 
-%% Combine mag & phase echoes
+%% Combine mag & phase echoTimes
 fileLocator = FileLocator(input_data_path);
 ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
 ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
@@ -46,57 +47,24 @@ ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
 
 %% Prepare header file for processing
 
-% error 'CODE DOES NOT WORK(!) TE files are in qsm_dicoms/echo*/real/*.json Manual override below'
-% 
-% te1 = 0.2;
-% te2 = 0.22628;
-% te3 = 0.25256;
-% te4 = 0.27884;
-
-%% Find Echo times (0018,0081)
-
-echoes = zeros(1,length(myEchos)); %create empty vector to enter echos
-
-for iEcho = myEchos
-    fname = fileLocator.GetBasicTypeWithSuffix(iEcho, 'real', 'json'); 
-    fid = fopen(fname); 
-    raw = fread(fid,inf); 
-    str = char(raw'); 
-    fclose(fid); 
-    val = jsondecode(str);
-    echoes(:,iEcho)= val.EchoTime;
-end
-
-%te1 = echoes(1,1);
-%te2 = echoes(1,2);
-%te3 = echoes(1,3);
-%te4 = echoes(1,4);
-%te5 = echoes(1,5);
-
-save('echoes.mat', 'echoes')
-
-% te1 = 5.44e-3; % s 
-% te2 = 12.0e-3; % s 
-% te3 = 18.6e-3; % s 
-% te4 = 25.2e-3;% 
-
+echoTimes = ReadEchoTimes(fileLocator, myEchos);
+save([input_data_path 'echoes.mat'], 'echoTimes')
 
 % set up dimensions
 % spatial resolution of the data, in mm
-File = load_untouch_nii(fileLocator.GetBasicType(myEchos(1), 'real'));
+File = load_untouch_nii(fileLocator.GetReal(myEchos(1)));
 header.voxelSize = File.hdr.dime.pixdim([2,3,4]); % nifti - pixdim 2,3,4 have the dimensions. 
 % image matrix size
-%header.matrixSize = [224,224,60]; %for Phillips clinical QSM
 header.matrixSize = File.hdr.dime.dim([2,3,4]);
 % set up parameters
 header.b0 = 3;                  % magnetic field strength, in Tesla
 header.b0dir = [0;0;1];         % main magnetic field direction, [x,y,z]
 header.CF = header.b0 * 42.58 * 1e6;       % imaging frequency, in Hz (B0*gyromagnetic_ratio)
-header.te = echoes;  % echo time for each GRE image, in seconds
-header.delta_TE = echoes(1,2) - echoes(1,1);      % echo spacing, in seconds
+header.te = echoTimes;  % echo time for each GRE image, in seconds
+header.delta_TE = echoTimes(1,2) - echoTimes(1,1);      % echo spacing, in seconds
 
 % save to mat file
-save([input_data_path '/sepia_header.mat'],'header');
+save([input_data_path 'sepia_header.mat'],'header');
 
 %% set up algorithm parameters
 
@@ -115,7 +83,6 @@ opts.QSMGAN             = 0;
 opts.All                = 0;
 
 %% run
-
 QSMfile = dir(output_data_path);
 QSMfile([QSMfile.isdir]) = [];
 QSMfile(cellfun(@isempty,strfind({QSMfile.name},'QSM_'))) = [];
@@ -317,16 +284,29 @@ system('send_to_pacs --in_dir /data/morrison/data/dystonia/Targeting/PHI_VS_0122
 % end
 % 
 
-function ConcatImages(fileLocator, imgType, echoes, saveTo)
+function ConcatImages(fileLocator, imgType, echoTimes, saveTo)
     %ConcatImagesAndZip concats images for each echo into a single file
     concated = [];
-    for iEcho = echoes
+    for iEcho = echoTimes
         File = load_untouch_nii(fileLocator.GetBasicType(iEcho, imgType));
         concated = cat(4, concated, File.img);
     end
 
     File.img = concated;
-    File.hdr.dime.dim(5) = length(echoes);
+    File.hdr.dime.dim(5) = length(echoTimes);
     save_untouch_nii(File, saveTo);
 end
 
+function echoTimes = ReadEchoTimes(fileLocator, myEchos)
+    echoTimes = zeros(1,length(myEchos)); %create empty vector to enter echos
+    
+    for iEcho = myEchos
+        fname = fileLocator.GetBasicTypeWithSuffix(iEcho, 'real', 'json'); 
+        fid = fopen(fname); 
+        raw = fread(fid,inf); 
+        str = char(raw'); 
+        fclose(fid); 
+        val = jsondecode(str);
+        echoTimes(:,iEcho)= val.EchoTime;
+    end
+end

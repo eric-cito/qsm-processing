@@ -23,10 +23,6 @@ RemoveEmptyDirs(topDir)
 
 disp("Dicom Organisation Complete")
 
-function  dir = GetDir(fileLocator, echo, imgType)
-    dir = fileLocator.GetBasicType(echo, imgType);
-end
-
 function MoveFiles()
     %MoveFiles moves files from their original to their organised locations
     for k = 1:length(myFiles)
