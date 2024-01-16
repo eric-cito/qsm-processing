@@ -46,8 +46,10 @@ def RunRomeo_sitk(phase:Image,
 
 
 def RunRomeo(loc_phase:str, magnitude:str, echoTimes:List[float], dir_out:str, loc_mask:Optional[str] = None):
-    binaryLocation = os.path.abspath(os.path.join(GetParentDirectory(__file__), "../romeo/romeo/bin/romeo"))
-    args = [binaryLocation, "-p", loc_phase, "-m", magnitude, "-B", "-t", str(echoTimes), "-o",  dir_out]
+    #binaryLocation = os.path.abspath(os.path.join(GetParentDirectory(__file__), "../romeo/romeo/bin/romeo"))
+    binaryLocation = os.path.abspath(os.path.join(GetParentDirectory(__file__), "../romeo/julia-1.9.4/bin/julia"))
+    scriptLocation = os.path.join(GetParentDirectory(__file__), "../romeo/romeo.jl")
+    args = [binaryLocation, scriptLocation, "-p", loc_phase, "-m", magnitude, "-B", "-t", str(echoTimes), "-o",  dir_out]
     if loc_mask is not None:
         args.append("--mask")
         args.append(loc_mask)

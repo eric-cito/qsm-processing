@@ -1,0 +1,75 @@
+# Builds singularity container with python and julia but binds 
+# an existing filesystem for the scripts, rather than holds them
+# within the container itself
+
+
+Bootstrap: docker
+From: ubuntu:22.04
+
+%setup
+    mkdir ${SINGULARITY_ROOTFS}/usr/local/julia
+    mkdir ${SINGULARITY_ROOTFS}/usr/local/python3.10/
+    mkdir ${SINGULARITY_ROOTFS}/data
+    mkdir ${SINGULARITY_ROOTFS}/qsm
+
+%files
+
+%environment
+
+%post
+    #!/bin/bash
+    apt-get update
+    apt-get install wget -y
+
+    echo "*****************"
+    echo "Installing Python 3.10"
+    cd /qsm
+    rm -rf env
+    ls -a .
+    apt-get update
+    apt-get install python3.10 python3.10-dev python3-pip python3.10-venv wget -y
+
+    echo "*****************"
+    # Install Julia
+    echo "Installing Julia"
+    cd /usr/local/
+    wget https://julialang-s3.julialang.org/bin/linux/x64/1.10/julia-1.10.0-linux-x86_64.tar.gz
+    tar zxvf julia-1.10.0-linux-x86_64.tar.gz
+    rm julia-1.10.0-linux-x86_64.tar.gz
+    cd julia-1.10.0
+    chmod -R 777 .
+    echo "*****************"
+    pwd
+    ls 
+    echo "*****************"
+    echo "export PATH=\"$PATH:`/usr/local/julia-1.10.0`/bin\"" > ~/.profile
+    echo "export JULIA_DEPOT_PATH=/usr/local/julia-1.10.0/julia-packages" > ~/.profile
+
+    export PATH=\"$PATH:/usr/local/julia-1.10.0/bin
+    export JULIA_DEPOT_PATH=`pwd`/julia-packages
+    
+    /usr/local/julia-1.10.0/bin/julia --version
+
+    # install CUDA for julia    
+    /usr/local/julia-1.10.0/bin/julia /qsm/romeo/build_step1.jl
+
+    # Download Romeo
+    echo "DOWNLOAD ROMEO"
+    /usr/local/julia-1.10.0/bin/julia /qsm/romeo/build_step2_no_compile.jl
+    
+
+
+#%test
+#    #!/bin/bash
+#    set -e
+#    bash julia-1.10.0 --version
+#    bash python3.10 --version
+
+%runscript
+    #!/bin/bash
+    
+    cd /qsm/
+    
+    source /qsm/env/bin/activate
+
+    /usr/local/python3.10/python3.10 -m main "$@"

@@ -36,10 +36,15 @@ class QSMPipeline:
         brainMask = self.GetOrCalcBrainmask(mag)
         unwrapped = UnwrapPhasePipeline(phase, mag, brainMask, TEs, self.locs).Run()
 
+        print("Rescaling...")
+        unwrapped = unwrapped * 
+
+        print("Running background field removal and dipole inversion")
         dipoleInverted = BackgroundFieldRemovalAndDipoleInversionPipeline(unwrapped, brainMask, self.locs).Run()
 
         final = dipoleInverted
 
+        print("Generating DICOMs")
         DicomGenerator(sitk.Cast(final * 1000, sitk.sitkInt16), self.locs.dir_dicoms_out, self.locs.loc_dicomHeader).Run()
 
     def GetOrCalcBrainmask(self, mag) -> sitk.Image:

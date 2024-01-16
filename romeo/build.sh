@@ -26,9 +26,9 @@ if [ ! -f bin/romeo ]; then
 
     # fi
 
-    $pathToJulia ./build_step1.jl
-    $pathToJulia ./build_step2.jl
-
+    #$pathToJulia ./build_step1.jl
+    #$pathToJulia ./build_step2.jl
+    $pathToJulia ./romeo.jl
 done
 # #
 # conda activate ../conda-env

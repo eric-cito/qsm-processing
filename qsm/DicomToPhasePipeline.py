@@ -23,9 +23,13 @@ class DicomToPhasePipeline:
             os.path.exists(self.locs.loc_TEs) and
             os.path.exists(self.locs.loc_dicomHeader)):
             print("Magnitude and phase images found. Skipping generation")
+            print("Reading old files...")
             phase = sitk.ReadImage(self.locs.loc_phase)
             magnitude = sitk.ReadImage(self.locs.loc_magnitude)
+            print("...done")
+            print("Reading old TE file...")
             TEs = self.ReadTEFile()
+            print("...done")
             
         else:
             os.makedirs(self.locs.dir_raw_nii, exist_ok=True)
