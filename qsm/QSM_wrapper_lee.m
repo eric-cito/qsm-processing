@@ -7,12 +7,12 @@
 clear all
 
 %% Settings
-input_data_path = '/Users/lee/data/pda440';
-output_data_path = '/Users/lee/data/pda440/processed/';
+input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
+output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 
-loc_dcm2niix = '/opt/homebrew/bin/dcm2niix';
-loc_fsl = '/Users/lee/binaries/fsl/share/fsl/bin/';
+loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
+loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
 
 %% add path
 dir_this = fileparts(mfilename('fullpath'));
@@ -83,9 +83,14 @@ opts.QSMGAN             = 0;
 opts.All                = 0;
 
 %% run
+if ~exist("output_data_path","dir")
+    mkdir(output_data_path)
+end
+
 QSMfile = dir(output_data_path);
 QSMfile([QSMfile.isdir]) = [];
 QSMfile(cellfun(@isempty,strfind({QSMfile.name},'QSM_'))) = [];
+
 
 %if (opts.All && length(QSMfile) < 10) || (~opts.All && length(QSMfile) < 2)
     [Tcomp] = QSM_processing_CPU(input, output_data_path, opts);

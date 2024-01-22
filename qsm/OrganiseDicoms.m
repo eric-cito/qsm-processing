@@ -27,9 +27,9 @@ function MoveFiles()
     %MoveFiles moves files from their original to their organised locations
     for k = 1:length(myFiles)
         f = myFiles(k);
-        src = [f.folder '/' f.name];
+        src = strcat(f.folder, "/", f.name); % important this is a true string or strcmp does not work properly
         destDir = fileLocator.GetDicomDir(echoes(k), imgTypes(k));
-        dest = strcat(destDir, f.name);
+        dest = string(strcat(destDir, f.name));
         if ~strcmp(src, dest)
             movefile(src, dest);
         end

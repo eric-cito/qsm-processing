@@ -9,7 +9,10 @@ classdef FileLocator
     methods
         function obj = FileLocator(dir_top)
             %FILELOCATOR Construct an instance of this class
-            obj.Dir_top = [dir_top '/'];
+            if ~endsWith(dir_top, '/')
+                dir_top = [dir_top '/'];
+            end
+            obj.Dir_top = dir_top;
             obj.Dir_dicoms = [obj.Dir_top 'dicoms/'];
         end
 
