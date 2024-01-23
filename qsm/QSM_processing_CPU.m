@@ -239,10 +239,18 @@ if mod(y2 - y1, 2) == 0
         y2 = y2 + 1;
     end
 end
-if mod(z2 - z1, 2) == 0 && z2 == size(brain_mask,3)
-    z1 = z1 - 1;
-elseif mod(z2 - z1, 2) == 0
-    z2 = z2 + 1;
+
+if mod(z2 - z1, 2) == 0
+    if z2 == size(brain_mask,3)
+        if z1 == 1
+            warning("IMAGE NEEDS ONE ROW OF PADDING IN Z DIMENSION")
+            z1 = 2;
+        else
+            z1 = z1 - 1;
+        end
+    else
+        z2 = z2 + 1;
+    end
 end
 
 crop.X = x1:x2;
