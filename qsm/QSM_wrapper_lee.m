@@ -7,29 +7,27 @@
 % To use, call like so
 % matlab QSM_wrapper_lee --input-directory /path/to/my/dir/
 % where that /dir/ has a subfolder containing dicoms, like /path/to/my/dir/dicoms/
-
-
 clear all
 
 
-%% INPUT PARSING
+% %% INPUT PARSING
 
-% Ensure the correct number of arguments is provided
-if numel(varargin) ~= 2 || ~strcmpi(varargin{1}, '--input-directory')
-    error('Usage: QSM_wrapper_lee --input-directory <directory_path>');
-end
+% % Ensure the correct number of arguments is provided
+% if numel(varargin) ~= 2 || ~strcmpi(varargin{1}, '--input-directory')
+%     error('Usage: QSM_wrapper_lee --input-directory <directory_path>');
+% end
 
-% Parse command line arguments
-inputDirectoryIndex = 2;
+% % Parse command line arguments
+% inputDirectoryIndex = 2;
 
-if inputDirectoryIndex > numel(varargin)
-    error('Error: Missing or invalid input directory argument');
-end
+% if inputDirectoryIndex > numel(varargin)
+%     error('Error: Missing or invalid input directory argument');
+% end
 
-input_data_path = varargin{inputDirectoryIndex};
+% input_data_path = varargin{inputDirectoryIndex};
 
 %% Settings
-%input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
+input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;
