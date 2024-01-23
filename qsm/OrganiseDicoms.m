@@ -76,17 +76,26 @@ function [echoNum, imageType] = ReadDicom(path)
     
     echoNum = dcmInfo.EchoNumbers;
 
-    % GE stores this information as a signed short of the 
-    % Private Image Type(0043,102F) tag. 
-    % The values 0, 1, 2, 3 correspond to magnitude, phase, real, and imaginary (respectively).
-    if dcmInfo.Private_0043_102f==0 %mag
-        imageType = 'mag';
-    elseif dcmInfo.Private_0043_102f==1
-        imageType = 'phase';
-    elseif dcmInfo.Private_0043_102f==2 %real
-        imageType = 'real';
-    elseif dcmInfo.Private_0043_102f==3 %imaginary
-        imageType = 'imaginary';
-    end
+    if isfield(dcmInfo, 'Private_0043_102f')
+        % GE stores this information as a signed short of the 
+        % Private Image Type(0043,102F) tag. 
+        % The values 0, 1, 2, 3 correspond to magnitude, phase, real, and imaginary (respectively).
+        if dcmInfo.Private_0043_102f==0 %mag
+            imageType = 'mag';
+        elseif dcmInfo.Private_0043_102f==1
+            imageType = 'phase';
+        elseif dcmInfo.Private_0043_102f==2 %real
+            imageType = 'real';
+        elseif dcmInfo.Private_0043_102f==3 %imaginary
+            imageType = 'imaginary';
+        end
 
+    else
+        % Philips
+        if contains(dcmInfo.ImageType, "PHASE MAP")
+            imageType = 'phase';
+        else
+            imageType = 'mag';
+        end
+    end
 end

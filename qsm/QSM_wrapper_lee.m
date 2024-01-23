@@ -33,6 +33,7 @@ input_data_path = varargin{inputDirectoryIndex};
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;
+expectRealImaginary = false;
 
 loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
@@ -56,14 +57,15 @@ if philipsTrueGEFalse
     CreatePhaseMag_Philips
 
 else
-    %% Step 1: sort dicoms
-    myEchos = OrganiseDicoms(input_data_path);
-    
-    %% Step 2 Correct offset for Re/Im images and overwrite
-    CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc_dcm2niix);
-    
-    %% Step 3 Create Phase from Real + Im
-    CreatePhase(input_data_path, myEchos)
+    if expectRealImaginary
+        %% Step 2 Correct offset for Re/Im images and overwrite
+        CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc_dcm2niix);
+        
+        %% Step 3 Create Phase from Real + Im
+        CreatePhase(input_data_path, myEchos);
+    else
+        ConvertPhaseMag(input_data_path, myEchos, loc_dcm2niix);
+    end
 
     %% Combine mag & phase echoTimes
     fileLocator = FileLocator(input_data_path);

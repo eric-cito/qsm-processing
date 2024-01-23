@@ -5,7 +5,7 @@ function RunSepia(fileLocator, myEchos, input_data_path, output_data_path)
     
     % set up dimensions
     % spatial resolution of the data, in mm
-    File = load_untouch_nii(fileLocator.GetReal(myEchos(1)));
+    File = load_untouch_nii(fileLocator.GetPhase(myEchos(1)));
     header.voxelSize = File.hdr.dime.pixdim([2,3,4]); % nifti - pixdim 2,3,4 have the dimensions. 
     % image matrix size
     header.matrixSize = File.hdr.dime.dim([2,3,4]);
@@ -68,6 +68,9 @@ function echoTimes = ReadEchoTimes(fileLocator, myEchos)
     
     for iEcho = myEchos
         fname = fileLocator.GetBasicTypeWithSuffix(iEcho, 'real', 'json'); 
+        if ~exist(fname, "file")
+            fname = fileLocator.GetBasicTypeWithSuffix(iEcho, 'phase', 'json'); 
+        end
         fid = fopen(fname); 
         raw = fread(fid,inf); 
         str = char(raw'); 
