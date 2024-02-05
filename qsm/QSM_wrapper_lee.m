@@ -7,10 +7,10 @@
 clear all
 
 %% Settings
-input_data_path = '/data/morrison/wip/lee/pda403/';% '/Users/lee/data/pda440';
+input_data_path = '/data/morrison/data/seqdev/012324_UCSF_MRC2/qsm_dicoms/qsm_dicoms_v2';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
-expectRealImaginary = false;
+expectRealImaginary = true;
 
 loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
