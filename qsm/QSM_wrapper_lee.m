@@ -4,17 +4,37 @@
 % Modified by Melanie
 % Reworked by Lee
 
+% To use, call like so
+% matlab QSM_wrapper_lee --input-directory /path/to/my/dir/
+% where that /dir/ has a subfolder containing dicoms, like /path/to/my/dir/dicoms/
 clear all
 
+
+% %% INPUT PARSING
+
+% % Ensure the correct number of arguments is provided
+% if numel(varargin) ~= 2 || ~strcmpi(varargin{1}, '--input-directory')
+%     error('Usage: QSM_wrapper_lee --input-directory <directory_path>');
+% end
+
+% % Parse command line arguments
+% inputDirectoryIndex = 2;
+
+% if inputDirectoryIndex > numel(varargin)
+%     error('Error: Missing or invalid input directory argument');
+% end
+
+% input_data_path = varargin{inputDirectoryIndex};
+
 %% Settings
-input_data_path = '/data/morrison/data/seqdev/012324_UCSF_MRC2/qsm_dicoms/qsm_dicoms_v2';% '/Users/lee/data/pda440';
+input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
-expectRealImaginary = true;
+philipsTrueGEFalse = false;
+expectRealImaginary = false;
 
 loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
-
 %% add path
 dir_this = fileparts(mfilename('fullpath'));
 
@@ -29,23 +49,30 @@ ptid = extractBefore(ptid,'_no.consent.yet-addpost');
 
 cd(input_data_path);
 
+if philipsTrueGEFalse
+    error NOT IMPLEMENTED SEE FUNCTION BELOW
+    error ALSO CHECK PHASE IMAGES - THEY SEEM ALREADY UNWRAPPED OR SOMETHING??
+    CreatePhaseMag_Philips
 
-%% Step 1: sort dicoms
-myEchos = OrganiseDicoms(input_data_path);
-
-if expectRealImaginary
-    %% Step 2 Correct offset for Re/Im images and overwrite
-    CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc_dcm2niix);
-    
-    %% Step 3 Create Phase from Real + Im
-    CreatePhase(input_data_path, myEchos);
 else
-    ConvertPhaseMag(input_data_path, myEchos, loc_dcm2niix);
+    if expectRealImaginary
+        %% Step 2 Correct offset for Re/Im images and overwrite
+        CorrectOffsetForReImAndCreateNiftis(input_data_path, myEchos, correctFilter, loc_dcm2niix);
+        
+        %% Step 3 Create Phase from Real + Im
+        CreatePhase(input_data_path, myEchos);
+    else
+        ConvertPhaseMag(input_data_path, myEchos, loc_dcm2niix);
+    end
+
+    %% Combine mag & phase echoTimes
+    fileLocator = FileLocator(input_data_path);
+    ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
+    ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
+
+    
 end
-%% Combine mag & phase echoTimes
-fileLocator = FileLocator(input_data_path);
-ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
-ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
+
 
 
 %% Run Sepia
