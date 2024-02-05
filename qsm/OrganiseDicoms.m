@@ -4,7 +4,7 @@ function allEchoes = OrganiseDicoms(topDir)
 
 fileLocator = FileLocator(topDir);
 
-myFiles = dir(fullfile(topDir,'**/*.dcm'));
+myFiles = [dir(fullfile(topDir,'**/*.DCM')); dir(fullfile(topDir,'**/*.dcm'))];
 
 disp("Reading Dicoms...")
 [echoes, imgTypes] = ReadDicoms(myFiles);

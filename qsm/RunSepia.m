@@ -24,6 +24,8 @@ function RunSepia(fileLocator, myEchos, input_data_path, output_data_path)
     %%% Please make sure the file names are the same as used below %%%%%%%%%%%%
     input.magnitudeFile     = [char(fileLocator.GetMagnitude_AllEchos())];
     input.phaseFile         = [char(fileLocator.GetPhase_AllEchos())];
+    %input.magnitudeFile     = '/data/morrison/wip/lee/pda403/mag_allEchos_denoised.nii';
+    %input.phaseFile         = '/data/morrison/wip/lee/pda403/phase_allEchos_denoised.nii';
     %%% Check name - end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     input.headerFile        = [input_data_path '/sepia_header.mat'];
     
