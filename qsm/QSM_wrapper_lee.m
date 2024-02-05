@@ -31,7 +31,7 @@ input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;
-expectRealImaginary = false;
+expectRealImaginary = true;
 
 loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
@@ -46,6 +46,8 @@ addpath(loc_fsl)
 ID1 = extractBefore(input_data_path,'/qsm');
 ptid = extractAfter(ID1,'clin/');
 ptid = extractBefore(ptid,'_no.consent.yet-addpost');
+
+dir_out_dicoms = [output_data_path '/dicoms'];
 
 cd(input_data_path);
 
@@ -78,7 +80,17 @@ end
 %% Run Sepia
 RunSepia(fileLocator, myEchos, input_data_path, output_data_path)
 
+finalNii = [output_data_path 'QSM_iLSQR_meanEcho.nii.gz'];
+
 %% (optional) convert to dicom
+if expectRealImaginary
+    templateType = 'real';
+else
+    templateType = 'mag';
+end
+loc_templateDicom = fileLocator.GetDicomDir(iEcho, templateType);
+CreateDicom(loc_templateDicom,  finalNii, dir_out_dicoms)
+
 %SendToPACS()
 
 
