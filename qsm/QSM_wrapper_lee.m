@@ -27,7 +27,7 @@ clear all
 % input_data_path = varargin{inputDirectoryIndex};
 
 %% Settings
-input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
+input_data_path = '/data/morrison/wip/lee/test-scan-lee/v1/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;
@@ -50,6 +50,10 @@ ptid = extractBefore(ptid,'_no.consent.yet-addpost');
 dir_out_dicoms = [output_data_path '/dicoms'];
 
 cd(input_data_path);
+
+%% Step 1: sort dicoms
+myEchos = OrganiseDicoms(input_data_path);
+
 
 if philipsTrueGEFalse
     error NOT IMPLEMENTED SEE FUNCTION BELOW
@@ -88,8 +92,8 @@ if expectRealImaginary
 else
     templateType = 'mag';
 end
-loc_templateDicom = fileLocator.GetDicomDir(iEcho, templateType);
-CreateDicom(loc_templateDicom,  finalNii, dir_out_dicoms)
+dir_templateDicom = fileLocator.GetDicomDir(1, templateType);
+CreateDicom(dir_templateDicom,  finalNii, dir_out_dicoms)
 
 %SendToPACS()
 
