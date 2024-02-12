@@ -27,7 +27,7 @@ clear all
 % input_data_path = varargin{inputDirectoryIndex};
 
 %% Settings
-input_data_path = '/data/morrison/wip/lee/test-scan-lee/v1/';% '/Users/lee/data/pda440';
+input_data_path = '/data/morrison/wip/lee/nov6/matlabRun/orig/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;

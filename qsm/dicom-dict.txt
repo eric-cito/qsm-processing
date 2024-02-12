@@ -1479,7 +1479,7 @@
 (0020,0013)	IS	InstanceNumber	1	
 (0020,0014)	IS	IsotopeNumber	1	
 (0020,0015)	IS	PhaseNumber	1	
-(0020,0016)	IS	IntervalNumber	1	
+(0020,0016)	IS	IntervalNumber	1	position
 (0020,0017)	IS	TimeSlotNumber	1	
 (0020,0018)	IS	AngleNumber	1	
 (0020,0019)	IS	ItemNumber	1	
