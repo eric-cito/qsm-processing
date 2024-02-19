@@ -27,7 +27,10 @@ clear all
 % input_data_path = varargin{inputDirectoryIndex};
 
 %% Settings
-input_data_path = '/data/morrison/wip/lee/nov6/matlabRun/orig/';% '/Users/lee/data/pda440';
+
+
+
+input_data_path = '/data/morrison/wip/lee/nov6/PDa434_no.consent.yet-addpost/qsm_dicoms/brain_ax_3d_swi/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
 philipsTrueGEFalse = false;
@@ -54,11 +57,9 @@ cd(input_data_path);
 %% Step 1: sort dicoms
 myEchos = OrganiseDicoms(input_data_path);
 
-
+fileLocator = FileLocator(input_data_path);
 if philipsTrueGEFalse
-    error NOT IMPLEMENTED SEE FUNCTION BELOW
-    error ALSO CHECK PHASE IMAGES - THEY SEEM ALREADY UNWRAPPED OR SOMETHING??
-    CreatePhaseMag_Philips
+    ConvertPhaseMag_Philips(fileLocator, myEchos, loc_dcm2niix)
 
 else
     if expectRealImaginary
@@ -69,15 +70,13 @@ else
         CreatePhase(input_data_path, myEchos);
     else
         ConvertPhaseMag(input_data_path, myEchos, loc_dcm2niix);
-    end
-
-    %% Combine mag & phase echoTimes
-    fileLocator = FileLocator(input_data_path);
-    ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
-    ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
-
+    end    
     
 end
+
+%% Combine mag & phase echoTimes
+ConcatImages(fileLocator, 'mag',  myEchos, fileLocator.GetMagnitude_AllEchos());
+ConcatImages(fileLocator, 'phase',  myEchos, fileLocator.GetPhase_AllEchos());
 
 
 
