@@ -27,11 +27,14 @@ clear all
 % input_data_path = varargin{inputDirectoryIndex};
 
 %% Settings
-input_data_path = '/data/morrison/wip/lee/PDa447/';% '/Users/lee/data/pda440';
+
+
+
+input_data_path = '/data/morrison/wip/lee/nov6/PDa434_no.consent.yet-addpost/qsm_dicoms/brain_ax_3d_swi/';% '/Users/lee/data/pda440';
 output_data_path = [input_data_path, 'processed/']; %'/Users/lee/data/pda440/processed/';
 correctFilter = false;
-philipsTrueGEFalse = true;
-expectRealImaginary = false;
+philipsTrueGEFalse = false;
+expectRealImaginary = true;
 
 loc_dcm2niix = 'dcm2niix';% '/opt/homebrew/bin/dcm2niix';
 loc_fsl = '/netopt/rhel7/fsl/bin/';%/Users/lee/binaries/fsl/share/fsl/bin/';
@@ -49,9 +52,12 @@ ptid = extractBefore(ptid,'_no.consent.yet-addpost');
 
 cd(input_data_path);
 
+%% Step 1: sort dicoms
+myEchos = OrganiseDicoms(input_data_path);
+
 fileLocator = FileLocator(input_data_path);
 if philipsTrueGEFalse
-    CreatePhaseMag_Philips()
+    ConvertPhaseMag_Philips(fileLocator, myEchos, loc_dcm2niix)
 
 else
     if expectRealImaginary
