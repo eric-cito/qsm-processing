@@ -40,8 +40,7 @@ ParseArgs() {
 
     # Validate directories
     [ -d "$dir_dicoms" ] || { echo "Error: --dicoms must be a directory"; print_help; exit 1; }
-    [ -z "$dir_out" ]  && { echo "Error: --out is required"; print_help; exit 1; } 
-    [ -e "$dir_out" ]  &&[ ! -d "$dir_out" ] && { echo "Error: $dir_out exists and is not a directory"; print_help; exit 1; }
+    [ -e "$dir_out" ] && [ ! -d "$dir_out" ] && { echo "Error: $dir_out exists and is not a directory"; print_help; exit 1; }
     [ -d "$tmp" ] || { echo "Error: --tmp must be a directory. ${tmp} is not a directory"; print_help; exit 1; }
 
     # Check for required subdirectories in dicoms
@@ -70,17 +69,14 @@ ConvertQSMDicoms(){
 }
 
 RenamePhaseMagNiftis(){
-    wd=$(pwd)
-    cd "$dir_anat"
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
-        mv qsm_*_e${i}.nii sub-${subj}_echo-${i}_part-mag_MEGRE.nii
-        mv qsm_*_e${i}.json sub-${subj}_echo-${i}_part-mag_MEGRE.json
+        mv $dir_anat/qsm_*_e${i}.nii $dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.nii
+        mv $dir_anat/qsm_*_e${i}.json $dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.json
 
-        mv qsm_*_e${i}_ph.nii sub-${subj}_echo-${i}_part-phase_MEGRE.nii
-        mv qsm_*_e${i}_ph.json sub-${subj}_echo-${i}_part-phase_MEGRE.json
+        mv $dir_anat/qsm_*_e${i}_ph.nii $dir_anat/sub-${subj}_echo-${i}_part-phase_MEGRE.nii
+        mv $dir_anat/qsm_*_e${i}_ph.json $dir_anat/sub-${subj}_echo-${i}_part-phase_MEGRE.json
     done
-    cd "$wd"
 }
 
 ConvertRealAndImaginaryToPhaseAndMag(){
@@ -120,7 +116,7 @@ GenerateQSMBrainmask(){
                         -i $loc_t1_brainmask \
                         -o $loc_qsm_brainmask \
                         -r "$loc_qsm_mag_echo1" \
-                        -u uchar \
+                        -u char \
                         -n NearestNeighbor
 }
 
@@ -131,8 +127,8 @@ CropQSMToBrainmask(){
     # Crop skulls from QSM
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*echo-[0-9]_part-mag_MEGRE.nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
-        python "$dir_sourceTop"/apply-mask.py "${dir_anat}/sub-${subj}_echo-${i}_part-mag_MEGRE.nii" $loc_qsm_brainmask "${dir_anat}/sub-${subj}_echo-${i}_part-mag_MEGRE.nii"
-        python "$dir_sourceTop"/apply-mask.py "${dir_anat}/sub-${subj}_echo-${i}_part-phase_MEGRE.nii" $loc_qsm_brainmask "${dir_anat}/sub-${subj}_echo-${i}_part-phase_MEGRE.nii"
+        python "$dir_sourceTop"/apply-mask.py "$dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.nii" $loc_qsm_brainmask "$dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.nii" 
+        python "$dir_sourceTop"/apply-mask.py "$dir_anat/sub-${subj}_echo-${i}_part-phase_MEGRE.nii" $loc_qsm_brainmask "$dir_anat/sub-${subj}_echo-${i}_part-phase_MEGRE.nii" 
     done
 }
 
@@ -147,6 +143,9 @@ ParseArgs "$@"
 # Create a temporary directory and add a trap to clean up
 tmp=$(mktemp -d "${tmp}/tmpdir-XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
+
+#dir_dicoms=/mnt/c/Users/lreid/data/qsmxt-processing/dicoms/$subj
+
 
 dir_bids="${tmp}"/bids
 subj=mysubj
@@ -168,9 +167,4 @@ CropQSMToBrainmask
 echo Now in docker run this, replacing the bids dir with the equiv path for that image
 echo Note that this will calculate its own mask. This is important for acquisitions with
 echo dark slices at the boundaries, like on siemens
-
-deactivate
-qsmxt $dir_bids --premade 'gre' --auto_y
-
-GzSafeMove $dir_bids/derivatives/qsmxt-20*/sub-${subj}/anat/sub-mysubj_Chimap.nii* "$dir_out/qsm.nii.gz"
-GzSafeMove "$loc_t1" "$dir_out/t1.nii.gz"
+echo qsmxt $dir_bids --premade 'gre' --auto_y

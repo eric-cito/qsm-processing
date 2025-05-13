@@ -3,8 +3,6 @@ set -e
 
 install_python() {
 
-    which python
-    echo "--------------"
     #apt-get install python3.10 python3.10-venv -y
 
     # Create a Python virtual environment
@@ -72,6 +70,7 @@ install_ants() {
 
     ln -s /opt/ants-2.4.3/ $dir_script/ants
 }
+
 
 # Ensure we are in the dir of this script
 dir_script="$(dirname "$(readlink -f "$0")")"/
