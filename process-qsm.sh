@@ -164,7 +164,10 @@ ConvertQSMDicoms
 
 CropQSMToBrainmask
 
-echo Now in docker run this, replacing the bids dir with the equiv path for that image
-echo Note that this will calculate its own mask. This is important for acquisitions with
-echo dark slices at the boundaries, like on siemens
-echo qsmxt $dir_bids --premade 'gre' --auto_y
+# Note that this will calculate its own mask. This is important for acquisitions with
+# dark slices at the boundaries, like on siemens
+qsmxt $dir_bids --premade 'gre' --auto_y
+
+# Copy out results
+mv $dir_bids/bids/derivatives/qsmxt-*/sub-*/anat/* "$dir_out"
+mv $dir_bids/bids/*/anat/t1.nii "$dir_out"
