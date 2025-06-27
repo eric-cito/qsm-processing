@@ -3,11 +3,10 @@ import os
 
 class FileLocations:
 
-    def __init__(self, dir_top):
-        self.dir_top =  dir_top
-        self.dir_dicoms_in = os.path.join(dir_top, 'qsm_dicoms/brain_ax_3d_swi_v1/')
+    def __init__(self, dir_dicoms_in, dir_out_top):
+        self.dir_dicoms_in = dir_dicoms_in
 
-        self.dir_out_top =os.path.join(dir_top, 'processed_QSM/')
+        self.dir_out_top =dir_out_top
         self.dir_raw_nii = os.path.join(self.dir_out_top, 'raw/')
         
         
@@ -24,7 +23,7 @@ class FileLocations:
         self.romeo_b0 = os.path.join(self.dir_phase_mag, 'romeo_b0.nii.gz')
               
 
-        self.dir_dicoms_out = os.path.join(dir_top, 'generated_dicoms/')
+        #self.dir_dicoms_out = os.path.join(dir_top, 'generated_dicoms/')
 
 
     def GetLoc(self, dir:str, echoNumber:Union[str,int], type:str, suffix:str="nii"):

@@ -1,12 +1,7 @@
 *.DS_Store
-*.m~
-*.asv
 env/
-conda-env/
 __pycache__/
-HDBET/
-HDBET
-romeo/julia-packages/
-romeo/julia-1.9.4/
-my_overlay/
+HD-BET/
 *.sif
+.vscode/
+ants
