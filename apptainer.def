@@ -1,0 +1,11 @@
+Bootstrap: docker
+From: leereid/qsmxt-plus
+
+%labels
+maintainer "Lee Reid <lee.reid1@uqconnect.edu.au>"
+version 1.0
+description "QSM XT, with an additional skull stripping step and real/imaginary dicom conversion"
+
+%help
+QSM XT, with an additional skull stripping step and real/imaginary dicom conversion
+Run this to see usage help

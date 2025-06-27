@@ -4,8 +4,9 @@ from .IO import WriteImageIfPathProvided
 import SimpleITK as sitk
 import os
 import tempfile
-import HDBET.HD_BET.run
+import brainles_hd_bet.run
 
+brainles_hd_bet.utils.folder_with_parameter_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 
 
 class SkullStripper:
@@ -47,7 +48,8 @@ class SkullStripper:
         
         loc_out = tempfile.mktemp(suffix="nii.gz")
 
-        return HDBET.HD_BET.run.run_hd_bet(input_files, 
+        
+        return brainles_hd_bet.run.run_hd_bet(input_files, 
                                         loc_out, 
                                         mode, 
                                         config_file=None, 

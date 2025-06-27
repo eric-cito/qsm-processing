@@ -4,9 +4,20 @@
 
 Best done in docker.
 
-* Download from git using `git clone`
-* cd to the directory you have just created
-* `docker build .`
+### Docker
+
+1. Download from git using `git clone`
+1. cd to the directory you have just created
+1. `./build-as-docker.sh`
+
+### Apptainer
+
+Alternatively, for HPC, build as apptainer/singularity. This simply pulls from DockerHub. See the build script for apptainer for more details.
+
+1. Download from git using `git clone`
+1. cd to the directory you have just created
+1. `./build-as-apptainer.sh`
+
 
 ## Running
 

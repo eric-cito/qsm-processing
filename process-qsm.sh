@@ -11,7 +11,7 @@ Options:
     --dicoms DIR        Directory containing DICOM files
     --out DIR           Directory for output files
     --tmp DIR           Temporary directory (default: /tmp/)
-    --realimag          Expect real / imaginary dicom pairs
+    --realimag_ge       Expect real / imaginary dicom pairs from a GE scanner
     --help              Show this help message
 
 Directory Requirements:
@@ -63,9 +63,9 @@ ConvertQSMDicoms(){
 
     if [[ "$realimag" -eq 1 ]]; then
         ConvertRealAndImaginaryToPhaseAndMag
-    else
-        RenamePhaseMagNiftis
-    fi   
+    fi
+    
+    RenamePhaseMagNiftis  
 }
 
 RenamePhaseMagNiftis(){
@@ -80,8 +80,22 @@ RenamePhaseMagNiftis(){
 }
 
 ConvertRealAndImaginaryToPhaseAndMag(){
-    echo "realimag is set to 1.  Not implemented"
-    exit 1
+
+    wd=$(pwd)
+    cd "$dir_anat"
+    local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
+    for i in $(seq 1 "$echoCount"); do
+
+        # Just point the phase json side car to the mag json sidecar
+        ln qsm_*_e${i}.json qsm_*_e${i}_ph.json
+
+        # Convert image/real to phase
+        # NB mag will have been created already assuming we are using GE/dcm2niix
+        python "$dir_sourceTop"/imaginary-real-to-phase.py qsm_*_e${i}_real.nii \
+                                                            qsm_*_e${i}_imaginary.nii \
+                                                            sub-${subj}_echo-${i}_part-phase_MEGRE.nii
+    done
+    cd "$wd"
 }
 
 
