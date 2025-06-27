@@ -12,7 +12,6 @@ RUN apt install -y software-properties-common && add-apt-repository -y 'ppa:dead
 COPY . /opt/
 WORKDIR /opt
 
-RUN ls /bin/
 RUN /opt/install.sh
 
 
