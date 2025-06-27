@@ -1,0 +1,45 @@
+Bootstrap: docker
+From: vnmd/qsmxt_7.1.0:20240809
+
+%labels
+maintainer "Lee Reid <lee.reid1@uqconnect.edu.au>"
+version 1.0
+description "QSM XT, with an additional skull stripping step and real/imaginary dicom conversion"
+
+%help
+QSM XT, with an additional skull stripping step and real/imaginary dicom conversion
+Run this to see usage help
+
+
+%files
+. /opt/lee
+
+%post
+
+echo "----"
+ls /opt/
+echo $SHELL
+echo "--****************************************--"
+echo "--****************************************--"
+echo "--****************************************--"
+echo "--****************************************--"
+echo "--****************************************--"
+echo "--****************************************--"
+ls /opt/lee
+echo "--****************************************--"
+
+apt-get update && apt-get install -y bash
+/bin/bash -c apt install -y software-properties-common && \
+    add-apt-repository -y 'ppa:deadsnakes/ppa' && \
+    apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install dcm2niix wget git -y 
+
+
+cd /opt/lee
+/opt/lee/install.sh
+
+
+%runscript
+cd /opt/lee
+bash -c /opt/lee/process-qsm.sh $*
