@@ -33,8 +33,26 @@ install_unzip() {
 }
 
 install_hd_bet() {
-    # Python must be activated first and requirements installed(!)
-    echo "Downloading HD-BET models"
+
+    # Python must be activated first(!)
+    if [ -d HD-BET ]; then
+        echo "HD-BET installation found. Delete HD-BET directory and re-run script to reinstall"
+        return 0
+    fi
+
+    echo "Installing HD-BET"
+
+    git clone https://github.com/MIC-DKFZ/HD-BET
+
+    cd HD-BET
+
+    # We have to use an old version because this OS doesn't support Python 3.10 properly
+    git checkout ae16068
+
+    python3 -m ensurepip
+    python -m pip install -e .
+
+    echo "folder_with_parameter_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"models\")" >> HD_BET/paths.py    
 
     # Download the model ahead of time
     mkdir models

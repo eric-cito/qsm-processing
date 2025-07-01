@@ -68,7 +68,7 @@ Run the pipeline specifying the as dicom and output dirs relative to the docker'
 ```
 
 e.g.
-s
+
 ```
 ./process-qsm.sh --dicoms /data/subj1-qsm/dicoms --out /data/subj1-qsm/results/
 ```

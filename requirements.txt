@@ -1,3 +1,2 @@
 dcm2niix
 simpleitk==2.3.1
-brainles-hd-bet==0.0.9 
