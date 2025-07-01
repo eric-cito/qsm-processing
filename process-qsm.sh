@@ -16,7 +16,7 @@ Options:
 
 Directory Requirements:
     The --dicoms directory must contain two folders:
-      - T1
+      - t1
       - qsm
     The qsm directory can contain sub-directories if desired, but this is not necessary.
 EOF
@@ -53,7 +53,7 @@ ConvertT1Dicoms(){
     if [ -e "$loc_t1" ]; then
         echo "Found $loc_t1 - skipping dicom conversion"
     else
-        [ -d "$dir_dicoms/T1" ] || { echo "Error: --dicoms must contain a T1 directory"; print_help; exit 1; }
+        [ -d "$dir_dicoms/t1" ] || { echo "Error: --dicoms must contain a t1 directory"; print_help; exit 1; }
         dcm2niix -o "$dir_anat" -f t1 "$dir_dicoms/t1"
     fi
 }
