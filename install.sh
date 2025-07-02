@@ -52,7 +52,8 @@ install_hd_bet() {
     python3 -m ensurepip
     python -m pip install -e .
 
-    echo "folder_with_parameter_files = os.path.join(os.path.dirname(os.path.abspath(__file__)), \"models\")" >> HD_BET/paths.py    
+    cd HD_BET
+    echo "folder_with_parameter_files = "\"$(pwd)"/models/\"" >> ./paths.py    
 
     # Download the model ahead of time
     mkdir models
@@ -62,7 +63,7 @@ install_hd_bet() {
     #wget -O models/3.model https://zenodo.org/record/2540695/files/3.model?download=1 
     #wget -O models/4.model https://zenodo.org/record/2540695/files/4.model?download=1 
 
-    cd ..
+    cd ../../
     
 }
 
