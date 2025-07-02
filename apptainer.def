@@ -6,7 +6,7 @@ maintainer "Lee Reid <lee.reid1@uqconnect.edu.au>"
 version 1.0
 description "QSM XT, with an additional skull stripping step and real/imaginary dicom conversion"
 
-%setup
+%post
 # Patch up a bug that seems to affect apptainer but not docker
 mv /opt/HD-BET/models /opt/HD-BET/HD_BET/models 
 
