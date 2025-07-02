@@ -183,5 +183,5 @@ CropQSMToBrainmask
 qsmxt $dir_bids --premade 'gre' --auto_y
 
 # Copy out results
-mv $dir_bids/bids/derivatives/qsmxt-*/sub-*/anat/* "$dir_out"
-mv $dir_bids/bids/*/anat/t1.nii "$dir_out"
+mv $dir_bids/derivatives/qsmxt-*/sub-*/anat/* "$dir_out"
+mv $dir_bids/*/anat/t1.nii "$dir_out"
