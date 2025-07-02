@@ -1,5 +1,5 @@
 #!/bin/bash
-# Note that there is no native apptainer build because it is too problematic
+# Note that there is no native apptainer build because it is too problematic.
 # Instead, it builds from docker. If the docker container cannot be found then
 # You will need to build the docker image yourself (see build-as-docker), altering the
 # tag and where it is pushed to to your own docker account, then also alter the
@@ -15,7 +15,7 @@ if [ -f qsm-processing.sif ]; then
     exit 0
 fi
 
-# Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back
-# you can ammend this for your own system as required 
+# Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back.
+# You can ammend this for your own system as required 
 singularity -v build --ignore-subuid /dev/shm/qsm-processing.sif apptainer.def
 mv /dev/shm/qsm-processing.sif ./qsm-processing.sif
