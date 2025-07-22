@@ -31,7 +31,7 @@ ParseArgs() {
             --dicoms) dir_dicoms="$2"; shift ;;
             --out) dir_out="$2"; shift ;;
             --tmp) tmp="$2"; shift ;;
-            --realimag) realimag=1 ;;
+            --realimag_ge) realimag_ge=1 ;;
             --help) print_help; exit 0 ;;
             *) echo "Unknown parameter passed: $1"; print_help; exit 1 ;;
         esac
@@ -91,6 +91,7 @@ ConvertRealAndImaginaryToPhaseAndMag(){
 
         # Convert image/real to phase
         # NB mag will have been created already assuming we are using GE/dcm2niix
+        echo "DEBUG -- THIS IS WHERE ERROR OCCURS"
         python "$dir_sourceTop"/imaginary-real-to-phase.py qsm_*_e${i}_real.nii \
                                                             qsm_*_e${i}_imaginary.nii \
                                                             sub-${subj}_echo-${i}_part-phase_MEGRE.nii
