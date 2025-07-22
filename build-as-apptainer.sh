@@ -17,5 +17,5 @@ fi
 
 # Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back.
 # You can ammend this for your own system as required 
-singularity -v build --ignore-subuid /data/morrison/wip/eric/tmp/qsm-processing.sif apptainer.def
+singularity -v build --ignore-subuid /data/morrison/wip/eric/modular-image-processing-system/qsm-processing-fix.sif apptainer.def
 ##mv /dev/shm/qsm-processing.sif ./qsm-processing.sif

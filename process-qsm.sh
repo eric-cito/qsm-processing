@@ -91,8 +91,7 @@ ConvertRealAndImaginaryToPhaseAndMag(){
 
         # Convert image/real to phase
         # NB mag will have been created already assuming we are using GE/dcm2niix
-        echo "DEBUG -- THIS IS WHERE ERROR OCCURS"
-        python "$dir_sourceTop"/imaginary-real-to-phase.py qsm_*_e${i}_real.nii \
+        python "$dir_sourceTop"/imaginary-real-to-phase-mag.py qsm_*_e${i}_real.nii \
                                                             qsm_*_e${i}_imaginary.nii \
                                                             sub-${subj}_echo-${i}_part-phase_MEGRE.nii
     done
