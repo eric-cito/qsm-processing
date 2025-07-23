@@ -30,6 +30,7 @@ cd "$dir_script"
 tmp_build_dir="/data/morrison/wip/eric/tmp-fix"
 mkdir -p "$tmp_build_dir"
 
+# Final path to where .sif file will be
 final_sif_path="/data/morrison/wip/eric/modular-image-processing-system/qsm-processing-fix.sif"
 
 if [ -f "$final_sif_path" ]; then
@@ -40,7 +41,7 @@ fi
 echo "Building .sif using $tmp_build_dir..."
 singularity -v build --ignore-subuid "$tmp_build_dir/qsm-processing-fix.sif" apptainer.def
 
-echo "Copying .sif to final location..."
-cp "$tmp_build_dir/qsm-processing-fix.sif" "$final_sif_path"
+echo "Moving .sif to final location..."
+mv "$tmp_build_dir/qsm-processing-fix.sif" "$final_sif_path"
 
 echo "Build complete: $final_sif_path"
