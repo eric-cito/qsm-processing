@@ -3,10 +3,10 @@
 set -e
 
 dir_script="$(dirname "$(readlink -f "$0")")"/
-cd $dir_script
+cd "$dir_script"
 
-docker build . --tag leereid/qsmxt-plus
+# Build the Docker image using your custom tag
+docker build . --tag ericcito/qsmxt-plus
 
-# This will give you access denied unless you are Lee, and logged in
-# so it is commented out by default
-# docker push leereid/qsmxt-plus:latest
+# Uncomment the next line if you later want to push to your DockerHub
+# docker push ericcito/qsmxt-plus:latest
