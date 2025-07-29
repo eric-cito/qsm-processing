@@ -23,7 +23,7 @@ EOF
 }
 
 ParseArgs() {
-    realimag=0
+    realimag_ge=0
     tmp=/tmp/
 
     while [[ "$#" -gt 0 ]]; do
@@ -61,7 +61,7 @@ ConvertT1Dicoms(){
 ConvertQSMDicoms(){
     dcm2niix -o $dir_anat -f qsm_%f_%p_%t_%s $dir_dicoms/qsm
 
-    if [[ "$realimag" -eq 1 ]]; then
+    if [[ "$realimag_ge" -eq 1 ]]; then
         ConvertRealAndImaginaryToPhaseAndMag
     fi
     
