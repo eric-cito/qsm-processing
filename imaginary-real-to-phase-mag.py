@@ -1,15 +1,15 @@
 import SimpleITK as sitk
 import sys
 
-# loc_real = sys.argv[0]
-# loc_imag = sys.argv[1]
-# loc_phase = sys.argv[2]
 loc_real = sys.argv[1]
 loc_imag = sys.argv[2]
 loc_phase = sys.argv[3]
 
 real = sitk.ReadImage(loc_real)
 imaginary = sitk.ReadImage(loc_imag)
+
+real = sitk.Cast(real, sitk.sitkFloat32)
+imaginary = sitk.Cast(imaginary, sitk.sitkFloat32)
 
 
 asComplex = sitk.RealAndImaginaryToComplex(real,imaginary)
