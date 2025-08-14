@@ -5,43 +5,17 @@
 # tag and where it is pushed to to your own docker account, then also alter the
 # apptainer definition to match
 
-# set -e
-
-# dir_script="$(dirname "$(readlink -f "$0")")"/
-# cd $dir_script
-
-# if [ -f qsm-processing.sif ]; then
-#     echo "Already exists at qsm-processing.sif"
-#     exit 0
-# fi
-
-# # Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back.
-# # You can ammend this for your own system as required 
-# singularity -v build --ignore-subuid /data/morrison/wip/eric/modular-image-processing-system/qsm-processing-fix.sif apptainer.def
-# ##mv /dev/shm/qsm-processing.sif ./qsm-processing.sif
-
-### TESTING THIS CODE
 set -e
 
 dir_script="$(dirname "$(readlink -f "$0")")"/
-cd "$dir_script"
+cd $dir_script
 
-# Use custom tmp directory to avoid /dev/shm I/O limitations
-tmp_build_dir="/data/morrison/wip/eric/tmp-fix"
-mkdir -p "$tmp_build_dir"
-
-# Final path to where .sif file will be
-final_sif_path="/data/morrison/wip/eric/modular-image-processing-system/qsm-processing-fix.sif"
-
-if [ -f "$final_sif_path" ]; then
-    echo "Already exists at $final_sif_path"
+if [ -f qsm-processing-fix.sif ]; then
+    echo "Already exists at qsm-processing-fix.sif"
     exit 0
 fi
 
-echo "Building .sif using $tmp_build_dir..."
-singularity -v build --ignore-subuid "$tmp_build_dir/qsm-processing-fix.sif" apptainer.def
-
-echo "Moving .sif to final location..."
-mv "$tmp_build_dir/qsm-processing-fix.sif" "$final_sif_path"
-
-echo "Build complete: $final_sif_path"
+# Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back.
+# You can ammend this for your own system as required 
+singularity -v build --ignore-subuid /dev/shm/qsm-processing-fix-2.sif apptainer.def
+mv /dev/shm/qsm-processing-fix-2.sif ./qsm-processing-fix-2.sif

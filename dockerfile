@@ -1,4 +1,4 @@
-FROM vnmd/qsmxt_7.1.0:20240809
+FROM vnmd/qsmxt_8.0.7:20250529
 LABEL maintainer="Lee Reid <lee.reid1@uqconnect.edu.au>"
 LABEL version=1.0
 LABEL description="QSM QT, with an additional skull stripping step and real/imaginary dicom conversion"

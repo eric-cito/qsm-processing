@@ -49,26 +49,42 @@ ParseArgs() {
 }
 
 
+# ConvertT1Dicoms(){
+#     if [ -e "$loc_t1" ]; then
+#         echo "Found $loc_t1 - skipping dicom conversion"
+#     else
+#         [ -d "$dir_dicoms/t1" ] || { echo "Error: --dicoms must contain a t1 directory"; print_help; exit 1; }
+#         dcm2niix -o "$dir_anat" -f t1 "$dir_dicoms/t1"
+#     fi
+# }
+
 ConvertT1Dicoms(){
     if [ -e "$loc_t1" ]; then
         echo "Found $loc_t1 - skipping dicom conversion"
+    elif [ -f "$dir_dicoms/t1/t1.nii" ]; then
+        echo "Found preconverted T1 at $dir_dicoms/t1/t1.nii — copying"
+        cp "$dir_dicoms/t1/t1.nii" "$loc_t1"
     else
         [ -d "$dir_dicoms/t1" ] || { echo "Error: --dicoms must contain a t1 directory"; print_help; exit 1; }
         dcm2niix -o "$dir_anat" -f t1 "$dir_dicoms/t1"
     fi
+    
 }
 
 ConvertQSMDicoms(){
     dcm2niix -o $dir_anat -f qsm_%f_%p_%t_%s $dir_dicoms/qsm
 
     if [[ "$realimag_ge" -eq 1 ]]; then
+        echo "Running ConvertRealAndImaginaryToPhaseAndMag"
         ConvertRealAndImaginaryToPhaseAndMag
     fi
     
+    echo "Running RenamePhaseMagNiftis"
     RenamePhaseMagNiftis  
 }
 
 RenamePhaseMagNiftis(){
+    
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
         mv $dir_anat/qsm_*_e${i}.nii $dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.nii
@@ -80,7 +96,6 @@ RenamePhaseMagNiftis(){
 }
 
 ConvertRealAndImaginaryToPhaseAndMag(){
-
     wd=$(pwd)
     cd "$dir_anat"
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
@@ -93,7 +108,11 @@ ConvertRealAndImaginaryToPhaseAndMag(){
         # NB mag will have been created already assuming we are using GE/dcm2niix
         python "$dir_sourceTop"/imaginary-real-to-phase-mag.py qsm_*_e${i}_real.nii \
                                                             qsm_*_e${i}_imaginary.nii \
-                                                            sub-${subj}_echo-${i}_part-phase_MEGRE.nii
+                                                            qsm_${subj}_e${i}_ph.nii
+        #python "$dir_sourceTop"/imaginary-real-to-phase-mag.py qsm_*_e${i}_real.nii \
+                                                            #qsm_*_e${i}_imaginary.nii \
+                                                            #sub-${subj}_echo-${i}_part-phase_MEGRE.nii
+                                                        
     done
     cd "$wd"
 }
@@ -136,7 +155,9 @@ GenerateQSMBrainmask(){
 
 CropQSMToBrainmask(){
 
+    echo "Generating QSM brainmask"
     GenerateQSMBrainmask
+    echo "Finished generating QSM brainmask"
 
     # Crop skulls from QSM
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*echo-[0-9]_part-mag_MEGRE.nii' | wc -l)
@@ -173,15 +194,21 @@ loc_qsm_brainmask=$dir_out/qsm-brainmask.nii.gz
 mkdir -p $dir_anat
 mkdir -p $dir_out
 
+echo "Converting T1 dicoms"
 ConvertT1Dicoms
+
+echo "Converting QSM dicoms"
 ConvertQSMDicoms
 
+echo "Cropping QSM to brainmask"
 CropQSMToBrainmask
 
 # Note that this will calculate its own mask. This is important for acquisitions with
 # dark slices at the boundaries, like on siemens
+
 qsmxt $dir_bids --premade 'gre' --auto_y
 
 # Copy out results
+echo "Copying results to $dir_out"
 mv $dir_bids/derivatives/qsmxt-*/sub-*/anat/* "$dir_out"
 mv $dir_bids/*/anat/t1.nii "$dir_out"
