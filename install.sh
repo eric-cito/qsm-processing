@@ -15,7 +15,9 @@ install_python() {
     # Activate the virtual environment
     chmod -R 700 ./env/bin/
     source $(pwd)/env/bin/activate
-
+    
+    python3 -m pip install numpy==1.24.3
+    python3 -m pip install SimpleITK==2.1.1
     python3 -m pip install -r requirements.txt
 
 }
