@@ -48,16 +48,6 @@ ParseArgs() {
     [ -d "$dir_dicoms/qsm" ] || { echo "Error: --dicoms must contain a qsm directory"; print_help; exit 1; }
 }
 
-
-# ConvertT1Dicoms(){
-#     if [ -e "$loc_t1" ]; then
-#         echo "Found $loc_t1 - skipping dicom conversion"
-#     else
-#         [ -d "$dir_dicoms/t1" ] || { echo "Error: --dicoms must contain a t1 directory"; print_help; exit 1; }
-#         dcm2niix -o "$dir_anat" -f t1 "$dir_dicoms/t1"
-#     fi
-# }
-
 ConvertT1Dicoms(){
     if [ -e "$loc_t1" ]; then
         echo "Found $loc_t1 - skipping dicom conversion"
@@ -78,13 +68,11 @@ ConvertQSMDicoms(){
         echo "Running ConvertRealAndImaginaryToPhaseAndMag"
         ConvertRealAndImaginaryToPhaseAndMag
     fi
-    
     echo "Running RenamePhaseMagNiftis"
     RenamePhaseMagNiftis  
 }
 
 RenamePhaseMagNiftis(){
-    
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
         mv $dir_anat/qsm_*_e${i}.nii $dir_anat/sub-${subj}_echo-${i}_part-mag_MEGRE.nii
@@ -100,7 +88,6 @@ ConvertRealAndImaginaryToPhaseAndMag(){
     cd "$dir_anat"
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*_e[0-9].nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
-
         # Just point the phase json side car to the mag json sidecar
         ln qsm_*_e${i}.json qsm_*_e${i}_ph.json
 
@@ -108,11 +95,7 @@ ConvertRealAndImaginaryToPhaseAndMag(){
         # NB mag will have been created already assuming we are using GE/dcm2niix
         python "$dir_sourceTop"/imaginary-real-to-phase-mag.py qsm_*_e${i}_real.nii \
                                                             qsm_*_e${i}_imaginary.nii \
-                                                            qsm_${subj}_e${i}_ph.nii
-        #python "$dir_sourceTop"/imaginary-real-to-phase-mag.py qsm_*_e${i}_real.nii \
-                                                            #qsm_*_e${i}_imaginary.nii \
-                                                            #sub-${subj}_echo-${i}_part-phase_MEGRE.nii
-                                                        
+                                                            qsm_${subj}_e${i}_ph.nii                                           
     done
     cd "$wd"
 }
@@ -154,11 +137,9 @@ GenerateQSMBrainmask(){
 }
 
 CropQSMToBrainmask(){
-
     echo "Generating QSM brainmask"
     GenerateQSMBrainmask
     echo "Finished generating QSM brainmask"
-
     # Crop skulls from QSM
     local echoCount=$(find "$dir_anat" -maxdepth 1 -type f -name '*echo-[0-9]_part-mag_MEGRE.nii' | wc -l)
     for i in $(seq 1 "$echoCount"); do
@@ -178,9 +159,6 @@ ParseArgs "$@"
 # Create a temporary directory and add a trap to clean up
 tmp=$(mktemp -d "${tmp}/tmpdir-XXXXXX")
 trap 'rm -rf "$tmp"' EXIT
-
-#dir_dicoms=/mnt/c/Users/lreid/data/qsmxt-processing/dicoms/$subj
-
 
 dir_bids="${tmp}"/bids
 subj=mysubj

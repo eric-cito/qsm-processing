@@ -10,12 +10,12 @@ set -e
 dir_script="$(dirname "$(readlink -f "$0")")"/
 cd $dir_script
 
-if [ -f qsm-processing-fix.sif ]; then
-    echo "Already exists at qsm-processing-fix.sif"
+if [ -f qsm-processing.sif ]; then
+    echo "Already exists at qsm-processing.sif"
     exit 0
 fi
 
 # Due to I/O limitations in our own HPC this builds to /dev/shm and is copied back.
 # You can ammend this for your own system as required 
-singularity -v build --ignore-subuid /dev/shm/qsm-processing-fix-2.sif apptainer.def
-mv /dev/shm/qsm-processing-fix-2.sif ./qsm-processing-fix-2.sif
+singularity -v build --ignore-subuid /dev/shm/qsm-processing.sif apptainer.def
+mv /dev/shm/qsm-processing.sif ./qsm-processing.sif
