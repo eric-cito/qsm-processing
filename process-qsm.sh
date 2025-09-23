@@ -57,8 +57,7 @@ ConvertT1Dicoms(){
     else
         [ -d "$dir_dicoms/t1" ] || { echo "Error: --dicoms must contain a t1 directory"; print_help; exit 1; }
         dcm2niix -o "$dir_anat" -f t1 "$dir_dicoms/t1"
-    fi
-    
+    fi   
 }
 
 ConvertQSMDicoms(){

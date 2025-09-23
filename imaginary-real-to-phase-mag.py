@@ -21,6 +21,9 @@ for sliceNo in range(1, asComplex.GetSize()[-1], 2):
 
 phase = sitk.ComplexToPhase(asComplex)
 
+# GE needs the phase to be negated
+phase = phase * -1.0
+
 # NB ITK can cause weirdness where the phase leaves the bounds 
 # of -Pi to Pi due to rounding error, or something. This looks
 # like striping 
